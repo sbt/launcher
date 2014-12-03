@@ -86,7 +86,7 @@ object LaunchTest {
 
   def getScalaVersion: String = getScalaVersion(getClass.getClassLoader)
   def getScalaVersion(loader: ClassLoader): String = getProperty(loader, "library.properties", "version.number")
-  lazy val AppVersion = getProperty(getClass.getClassLoader, "xsbt.version.properties", "version")
+  lazy val AppVersion = getProperty(getClass.getClassLoader, "sbt.launcher.version.properties", "version")
 
   private[this] def getProperty(loader: ClassLoader, res: String, prop: String) = loadProperties(loader.getResourceAsStream(res)).getProperty(prop)
   private[this] def loadProperties(propertiesStream: InputStream): Properties =
