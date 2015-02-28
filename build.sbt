@@ -1,4 +1,4 @@
-import Common._
+import Deps._
 import Util._
 
 // the launcher is published with metadata so that the scripted plugin can pull it in
@@ -8,8 +8,6 @@ def proguardedLauncherSettings = Seq(
   moduleName := "sbt-launch",
   autoScalaLibrary := false,
   description := "sbt application launcher"
-  //publishLauncher <<= Release.deployLauncher,
-  //packageBin in Compile <<= proguard in Proguard
 )
 
 def launchSettings =
@@ -33,8 +31,8 @@ lazy val launchSub = testedBaseProject(file("."), "Launcher") dependsOn (
   launchInterfaceSub
 ) settings (launchSettings: _*) settings(
   libraryDependencies ++= Seq(
-    "org.scala-sbt" % "io" % sbtVersion.value % "test->test",
-    "org.scala-sbt" % "interface" % sbtVersion.value % "test"
+    sbtIo.value % "test->test",
+    sbtCompileInterface.value % "test"
   )
 )
 
@@ -44,21 +42,18 @@ lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")
 )
 
 def sbtBuildSettings = Seq(
-  organization := "org.scala-sbt",
   version := "0.13.8-SNAPSHOT",
   publishArtifact in packageDoc := false,
   scalaVersion := "2.10.4",
   publishMavenStyle := false,
-  componentID := None,
   crossPaths := false,
   resolvers += Resolver.typesafeIvyRepo("releases"),
-  concurrentRestrictions in Global += Util.testExclusiveRestriction,
   testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
   javacOptions in compile ++= Seq("-target", "6", "-source", "6", "-Xlint", "-Xlint:-serial"),
   incOptions := incOptions.value.withNameHashing(true)
 )
 
-Project.inScope(Scope.GlobalScope in ThisBuild)(sbtBuildSettings ++ Status.settings ++ nightlySettings)
+Project.inScope(Scope.GlobalScope in ThisBuild)(sbtBuildSettings)
 LaunchProguard.settings
 LaunchProguard.specific(launchSub)
 

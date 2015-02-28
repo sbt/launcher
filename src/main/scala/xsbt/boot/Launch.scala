@@ -338,14 +338,12 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
     configuration = makeConfiguration(ScalaOrg, scalaVersion),
     target = new UpdateApp(Application(id), if (getClassifiers) Value.get(classifiers.app) else Nil, tpe),
     failLabel = id.name + " " + id.version,
-    extraClasspath = id.classpathExtra
-  )
+    extraClasspath = id.classpathExtra)
   def scalaModule(org: String, version: String): ModuleDefinition = new ModuleDefinition(
     configuration = makeConfiguration(org, Some(version)),
     target = new UpdateScala(Value.get(classifiers.forScala)),
     failLabel = "Scala " + version,
-    extraClasspath = array()
-  )
+    extraClasspath = array())
   /** Returns the resolved appVersion (if this was an App), as well as the scalaVersion. */
   def update(mm: ModuleDefinition, reason: String): (Option[String], Option[String]) =
     {

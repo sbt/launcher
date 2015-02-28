@@ -117,6 +117,5 @@ private object ProxyProperties {
     pre + ".proxyHost",
     pre + ".proxyPort",
     pre + ".proxyUser",
-    pre + ".proxyPassword"
-  )
+    pre + ".proxyPassword")
 }

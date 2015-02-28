@@ -34,7 +34,7 @@ final class UpdateScala(val classifiers: List[String]) extends UpdateTarget { de
 final class UpdateApp(val id: Application, val classifiers: List[String], val tpe: String) extends UpdateTarget
 
 final class UpdateConfiguration(val bootDirectory: File, val ivyHome: Option[File], val scalaOrg: String,
-    val scalaVersion: Option[String], val repositories: List[xsbti.Repository], val checksums: List[String]) {
+  val scalaVersion: Option[String], val repositories: List[xsbti.Repository], val checksums: List[String]) {
   val resolutionCacheBase = new File(bootDirectory, "resolution-cache")
   def getScalaVersion = scalaVersion match { case Some(sv) => sv; case None => "" }
 }
@@ -56,8 +56,7 @@ final class Update(config: UpdateConfiguration) {
     val optionProps =
       Option(System.getProperty("sbt.boot.credentials")) orElse
         Option(System.getenv("SBT_CREDENTIALS")) map (path =>
-          Pre.readProperties(new File(path))
-        )
+          Pre.readProperties(new File(path)))
     optionProps match {
       case Some(props) => extractCredentials("realm", "host", "user", "password")(props)
       case None        => ()
