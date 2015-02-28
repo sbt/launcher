@@ -18,14 +18,16 @@ def launchSettings =
       Transform.sourceProperties := Map("cross.package0" -> "xsbt", "cross.package1" -> "boot")
     ))
 
+// The interface JAR for projects which want to be launched by sbt.
 lazy val launchInterfaceSub =
-  minProject(file("interface"), "Launcher Interface") settings (javaOnly: _*) settings(
-    resourceGenerators in Compile <+= (version, resourceManaged, streams, compile in Compile) map generateVersionFile("sbt.launcher.version.properties")
-  )
+  minProject(file("interface"), "Launcher Interface").settings(javaOnly: _*).settings(
+    resourceGenerators in Compile <+= (version, resourceManaged, streams, compile in Compile) map generateVersionFile("sbt.launcher.version.properties"),
+    description := "Interfaces for launching projects with the sbt launcher"
+  ).settings(Release.settings:_*)
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
 // TODO - move into a directory called "launcher-impl or something."
-lazy val launchSub = baseProject(file("implementation"), "Launcher Implementation").
+lazy val launchSub = noPublish(baseProject(file("implementation"), "Launcher Implementation")).
   dependsOn(launchInterfaceSub).
   settings(launchSettings: _*).
   settings(
@@ -54,7 +56,7 @@ lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")
 )
 
 def sbtBuildSettings = Seq(
-  version := "0.13.8-SNAPSHOT",
+  version := "1.0.0-SNAPSHOT",
   publishArtifact in packageDoc := false,
   scalaVersion := "2.10.4",
   publishMavenStyle := false,
@@ -65,13 +67,24 @@ def sbtBuildSettings = Seq(
   incOptions := incOptions.value.withNameHashing(true)
 )
 
+// Configuration for the launcher root project (the proguarded launcher)
 Project.inScope(Scope.GlobalScope in ThisBuild)(sbtBuildSettings)
 LaunchProguard.settings
 LaunchProguard.specific(launchSub)
 javaOnly
 packageBin in Compile := (LaunchProguard.proguard in LaunchProguard.Proguard).value
+packageSrc in Compile := (packageSrc in Compile in launchSub).value
 Util.commonSettings("launcher")
-
+Release.settings
+description := "Standalone launcher for maven/ivy deployed projects."
 configs(LaunchProguard.Proguard)
+
+commands += Command.command("release") { state =>
+   "checkCredentials" ::
+  "clean" ::
+  "test" ::
+  "publishSigned" ::
+  state
+}
 
 
