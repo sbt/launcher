@@ -10,7 +10,8 @@ object Util {
     Seq(publish := ())
   def commonSettings(nameString: String) = Seq(
     name := nameString,
-    resolvers += Resolver.typesafeIvyRepo("releases")
+    resolvers += Resolver.typesafeIvyRepo("releases"),
+    publishMavenStyle := true
   )
 
   def minProject(path: File, nameString: String) = Project(normalize(nameString), path) settings (commonSettings(nameString) ++ Release.javaVersionCheckSettings: _*)

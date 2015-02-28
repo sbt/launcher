@@ -25,7 +25,7 @@ lazy val launchInterfaceSub =
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
 // TODO - move into a directory called "launcher-impl or something."
-lazy val launchSub = baseProject(file("."), "Launcher").
+lazy val launchSub = baseProject(file("implementation"), "Launcher Implementation").
   dependsOn(launchInterfaceSub).
   settings(launchSettings: _*).
   settings(
@@ -68,6 +68,9 @@ def sbtBuildSettings = Seq(
 Project.inScope(Scope.GlobalScope in ThisBuild)(sbtBuildSettings)
 LaunchProguard.settings
 LaunchProguard.specific(launchSub)
+javaOnly
+packageBin in Compile := (LaunchProguard.proguard in LaunchProguard.Proguard).value
+Util.commonSettings("launcher")
 
 configs(LaunchProguard.Proguard)
 
