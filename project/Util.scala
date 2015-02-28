@@ -13,9 +13,8 @@ object Util {
     resolvers += Resolver.typesafeIvyRepo("releases")
   )
 
-  def minProject(path: File, nameString: String) = Project(normalize(nameString), path) settings (commonSettings(nameString) ++ publishPomSettings ++ Release.javaVersionCheckSettings: _*)
+  def minProject(path: File, nameString: String) = Project(normalize(nameString), path) settings (commonSettings(nameString) ++ Release.javaVersionCheckSettings: _*)
   def baseProject(path: File, nameString: String) = minProject(path, nameString) settings (base: _*)
-  def testedBaseProject(path: File, nameString: String) = baseProject(path, nameString) settings (testDependencies)
 
   /** Configures a project to be java only. */
   lazy val javaOnly = Seq[Setting[_]](
@@ -35,13 +34,6 @@ object Util {
       case _             => Seq()
     }
   )
-
-  def testDependencies = libraryDependencies ++= Seq(
-      Deps.scalacheck % "test",
-      Deps.specs2 % "test",
-      Deps.junit % "test"
-    )
-
   lazy val minimalSettings: Seq[Setting[_]] = Defaults.paths ++ Seq[Setting[_]](crossTarget := target.value, name <<= thisProject(_.id))
 
 
@@ -66,24 +58,6 @@ object Util {
     }
   def versionLine(version: String): String = "version=" + version
   def containsVersion(propFile: File, version: String): Boolean = IO.read(propFile).contains(versionLine(version))
-
-  def publishPomSettings: Seq[Setting[_]] = Seq(
-    publishArtifact in makePom := false,
-    pomPostProcess := cleanPom _
-  )
-
-  def cleanPom(pomNode: scala.xml.Node) =
-    {
-      import scala.xml._
-      def cleanNodes(nodes: Seq[Node]): Seq[Node] = nodes flatMap (_ match {
-        case Elem(prefix, "classifier", attributes, scope, children @ _*) =>
-          NodeSeq.Empty
-        case Elem(prefix, label, attributes, scope, children @ _*) =>
-          Elem(prefix, label, attributes, scope, cleanNodes(children): _*).theSeq
-        case other => other
-      })
-      cleanNodes(pomNode.theSeq)(0)
-    }
 }
 object Licensed {
   lazy val notice = SettingKey[File]("notice")

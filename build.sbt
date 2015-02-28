@@ -11,9 +11,6 @@ def proguardedLauncherSettings = Seq(
 )
 
 def launchSettings =
-  Seq(ivy,
-    compile in Test <<= compile in Test dependsOn (publishLocal in testSamples, publishLocal in launchInterfaceSub)
-  ) ++
     inConfig(Compile)(Transform.configSettings) ++
     inConfig(Compile)(Transform.transSourceSettings ++ Seq(
       // TODO - these should be shared between sbt core + sbt-launcher...
@@ -27,18 +24,33 @@ lazy val launchInterfaceSub =
   )
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
-lazy val launchSub = testedBaseProject(file("."), "Launcher") dependsOn (
-  launchInterfaceSub
-) settings (launchSettings: _*) settings(
-  libraryDependencies ++= Seq(
-    sbtIo.value % "test->test",
-    sbtCompileInterface.value % "test"
+// TODO - move into a directory called "launcher-impl or something."
+lazy val launchSub = baseProject(file("."), "Launcher").
+  dependsOn(launchInterfaceSub).
+  settings(launchSettings: _*).
+  settings(
+    libraryDependencies ++= Seq(
+      ivy,
+      sbtIo.value % "test->test",
+      sbtCompileInterface.value % "test",
+      Deps.scalacheck % "test",
+      Deps.specs2 % "test",
+      Deps.junit % "test"
+    ),
+    compile in Test := {
+      val ignore = (publishLocal in testSamples).value
+      val ignore2 = (publishLocal in launchInterfaceSub).value
+      (compile in Test).value
+    }
   )
-)
 
 // used to test the retrieving and loading of an application: sample app is packaged and published to the local repository
-lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")) dependsOn (launchInterfaceSub) settings (scalaCompiler) settings(
-  libraryDependencies += "org.scala-sbt" % "interface" % sbtVersion.value
+lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")) dependsOn (launchInterfaceSub) settings(
+  libraryDependencies ++=
+    Seq(
+      sbtCompileInterface.value,
+      scalaCompiler.value
+    )
 )
 
 def sbtBuildSettings = Seq(
