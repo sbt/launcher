@@ -27,7 +27,7 @@ lazy val launchInterfaceSub =
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
 // TODO - move into a directory called "launcher-impl or something."
-lazy val launchSub = noPublish(baseProject(file("implementation"), "Launcher Implementation")).
+lazy val launchSub = noPublish(baseProject(file("launcher-implementation"), "Launcher Implementation")).
   dependsOn(launchInterfaceSub).
   settings(launchSettings: _*).
   settings(
