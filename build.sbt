@@ -20,7 +20,7 @@ def launchSettings =
 
 // The interface JAR for projects which want to be launched by sbt.
 lazy val launchInterfaceSub =
-  minProject(file("interface"), "Launcher Interface").settings(javaOnly: _*).settings(
+  minProject(file("launcher-interface"), "Launcher Interface").settings(javaOnly: _*).settings(
     resourceGenerators in Compile <+= (version, resourceManaged, streams, compile in Compile) map generateVersionFile("sbt.launcher.version.properties"),
     description := "Interfaces for launching projects with the sbt launcher"
   ).settings(Release.settings:_*)
