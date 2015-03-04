@@ -1,4 +1,4 @@
-import Common._
+import Deps._
 import Util._
 
 // the launcher is published with metadata so that the scripted plugin can pull it in
@@ -8,14 +8,9 @@ def proguardedLauncherSettings = Seq(
   moduleName := "sbt-launch",
   autoScalaLibrary := false,
   description := "sbt application launcher"
-  //publishLauncher <<= Release.deployLauncher,
-  //packageBin in Compile <<= proguard in Proguard
 )
 
 def launchSettings =
-  Seq(ivy,
-    compile in Test <<= compile in Test dependsOn (publishLocal in testSamples, publishLocal in launchInterfaceSub)
-  ) ++
     inConfig(Compile)(Transform.configSettings) ++
     inConfig(Compile)(Transform.transSourceSettings ++ Seq(
       // TODO - these should be shared between sbt core + sbt-launcher...
@@ -23,45 +18,73 @@ def launchSettings =
       Transform.sourceProperties := Map("cross.package0" -> "xsbt", "cross.package1" -> "boot")
     ))
 
+// The interface JAR for projects which want to be launched by sbt.
 lazy val launchInterfaceSub =
-  minProject(file("interface"), "Launcher Interface") settings (javaOnly: _*) settings(
-    resourceGenerators in Compile <+= (version, resourceManaged, streams, compile in Compile) map generateVersionFile("sbt.launcher.version.properties")
-  )
+  minProject(file("interface"), "Launcher Interface").settings(javaOnly: _*).settings(
+    resourceGenerators in Compile <+= (version, resourceManaged, streams, compile in Compile) map generateVersionFile("sbt.launcher.version.properties"),
+    description := "Interfaces for launching projects with the sbt launcher"
+  ).settings(Release.settings:_*)
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
-lazy val launchSub = testedBaseProject(file("."), "Launcher") dependsOn (
-  launchInterfaceSub
-) settings (launchSettings: _*) settings(
-  libraryDependencies ++= Seq(
-    "org.scala-sbt" % "io" % sbtVersion.value % "test->test",
-    "org.scala-sbt" % "interface" % sbtVersion.value % "test"
+// TODO - move into a directory called "launcher-impl or something."
+lazy val launchSub = noPublish(baseProject(file("implementation"), "Launcher Implementation")).
+  dependsOn(launchInterfaceSub).
+  settings(launchSettings: _*).
+  settings(
+    libraryDependencies ++= Seq(
+      ivy,
+      sbtIo.value % "test->test",
+      sbtCompileInterface.value % "test",
+      Deps.scalacheck % "test",
+      Deps.specs2 % "test",
+      Deps.junit % "test"
+    ),
+    compile in Test := {
+      val ignore = (publishLocal in testSamples).value
+      val ignore2 = (publishLocal in launchInterfaceSub).value
+      (compile in Test).value
+    }
   )
-)
 
 // used to test the retrieving and loading of an application: sample app is packaged and published to the local repository
-lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")) dependsOn (launchInterfaceSub) settings (scalaCompiler) settings(
-  libraryDependencies += "org.scala-sbt" % "interface" % sbtVersion.value
+lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")) dependsOn (launchInterfaceSub) settings(
+  libraryDependencies ++=
+    Seq(
+      sbtCompileInterface.value,
+      scalaCompiler.value
+    )
 )
 
 def sbtBuildSettings = Seq(
-  organization := "org.scala-sbt",
-  version := "0.13.8-SNAPSHOT",
+  version := "1.0.0-SNAPSHOT",
   publishArtifact in packageDoc := false,
   scalaVersion := "2.10.4",
   publishMavenStyle := false,
-  componentID := None,
   crossPaths := false,
   resolvers += Resolver.typesafeIvyRepo("releases"),
-  concurrentRestrictions in Global += Util.testExclusiveRestriction,
   testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
   javacOptions in compile ++= Seq("-target", "6", "-source", "6", "-Xlint", "-Xlint:-serial"),
   incOptions := incOptions.value.withNameHashing(true)
 )
 
-Project.inScope(Scope.GlobalScope in ThisBuild)(sbtBuildSettings ++ Status.settings ++ nightlySettings)
+// Configuration for the launcher root project (the proguarded launcher)
+Project.inScope(Scope.GlobalScope in ThisBuild)(sbtBuildSettings)
 LaunchProguard.settings
 LaunchProguard.specific(launchSub)
-
+javaOnly
+packageBin in Compile := (LaunchProguard.proguard in LaunchProguard.Proguard).value
+packageSrc in Compile := (packageSrc in Compile in launchSub).value
+Util.commonSettings("launcher")
+Release.settings
+description := "Standalone launcher for maven/ivy deployed projects."
 configs(LaunchProguard.Proguard)
+
+commands += Command.command("release") { state =>
+   "checkCredentials" ::
+  "clean" ::
+  "test" ::
+  "publishSigned" ::
+  state
+}
 
 

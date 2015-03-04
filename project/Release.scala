@@ -1,9 +1,11 @@
-import Status.publishStatus
 import com.typesafe.sbt.JavaVersionCheckPlugin.autoImport._
 import sbt.Keys._
 import sbt._
 
-object Release extends Build {
+import scala.xml.{Elem, NodeSeq}
+import scala.xml.transform.{RuleTransformer, RewriteRule}
+
+object Release {
   lazy val remoteBase = SettingKey[String]("remote-base")
   lazy val remoteID = SettingKey[String]("remote-id")
   lazy val launcherRemotePath = SettingKey[String]("launcher-remote-path")
@@ -12,44 +14,48 @@ object Release extends Build {
 
   val PublishRepoHost = "private-repo.typesafe.com"
 
-  def settings(nonRoots: => Seq[ProjectReference], launcher: TaskKey[File]): Seq[Setting[_]] =
-    releaseSettings(nonRoots, launcher)
+  def settings: Seq[Setting[_]] = Seq(
+    // TODO - Fix release settings
+    checkCredentials := {
+      // Note - This will either issue a failure or succeed.
+      getCredentials(credentials.value, streams.value.log)
+    },
+    // Maven central cannot allow other repos.  We're ok here because the artifacts we
+    // we use externally are *optional* dependencies.
+    pomIncludeRepository := { x => false },
+    homepage := Some(url("http://scala-sbt.org")),
+    licenses += "BSD" -> new java.net.URL("http://opensource.org/licenses/BSD-2-Clause"),
+    scmInfo := Some(ScmInfo(
+      browseUrl = new java.net.URL("http://github.com/sbt/launcher"),
+      connection = "scm:git@github.com:sbt/launcher.git"
+    )),
+    pomExtra := (
+      <developers>
+        <developer>
+          <id>jsuereth</id>
+          <name>Josh Suereth</name>
+          <url>http://jsuereth.com</url>
+        </developer>
+        <developer>
+          <id>eed3si9n</id>
+          <name>Eugene Yokota</name>
+          <url>http://eed3si9n.com/</url>
+        </developer>
+      </developers>),
+    publishTo := {
+      val nexus = "https://oss.sonatype.org/"
+      if (version.value.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
+      else                             Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    }
+  ) ++ lameCredentialSettings ++ javaVersionCheckSettings
 
   // Add credentials if they exist.
   def lameCredentialSettings: Seq[Setting[_]] =
     if (CredentialsFile.exists) Seq(credentials in ThisBuild += Credentials(CredentialsFile))
     else Nil
-  def releaseSettings(nonRoots: => Seq[ProjectReference], launcher: TaskKey[File]): Seq[Setting[_]] = Seq(
-    publishTo in ThisBuild <<= publishResolver,
-    remoteID <<= publishStatus("typesafe-ivy-" + _),
-    remoteBase <<= publishStatus("https://" + PublishRepoHost + "/typesafe/ivy-" + _),
-    launcherRemotePath <<= (organization, version, moduleName) { (org, v, n) => List(org, n, v, n + ".jar").mkString("/") },
-    publish <<= Seq(publish, Release.deployLauncher).dependOn,
-    deployLauncher <<= deployLauncher(launcher),
-    checkCredentials := {
-      // Note - This will eitehr issue a failure or succeed.
-      getCredentials(credentials.value, streams.value.log)
-    }
-  ) ++ lameCredentialSettings ++ javaVersionCheckSettings
 
-  def snapshotPattern(version: String) = Resolver.localBasePattern.replaceAll("""\[revision\]""", version)
-  def publishResolver: Def.Initialize[Option[Resolver]] = (remoteID, remoteBase) { (id, base) =>
-    Some(Resolver.url("publish-" + id, url(base))(Resolver.ivyStylePatterns))
-  }
-
+  // Hackery so we use the same old credentials as the sbt build, if necessary.
   lazy val CredentialsFile: File = Path.userHome / ".ivy2" / ".typesafe-credentials"
-
-  // this is no longer strictly necessary, since the launcher is now published as normal
-  // however, existing scripts expect the launcher to be in a certain place and normal publishing adds "jars/" 
-  // to the published path
-  def deployLauncher(launcher: TaskKey[File]) =
-    (launcher, launcherRemotePath, credentials, remoteBase, streams) map { (launchJar, remotePath, creds, base, s) =>
-      val (uname, pwd) = getCredentials(creds, s.log)
-      val request = dispatch.classic.url(base) / remotePath <<< (launchJar, "binary/octet-stream") as (uname, pwd)
-      val http = new dispatch.classic.Http
-      try { http(request.as_str) } finally { http.shutdown() }
-      ()
-    }
   def getCredentials(cs: Seq[Credentials], log: Logger): (String, String) =
     {
       Credentials.forHost(cs, PublishRepoHost) match {
@@ -58,6 +64,7 @@ object Release extends Build {
       }
     }
 
+  // Validation for java verison
   def javaVersionCheckSettings = Seq(
     javaVersionPrefix in javaVersionCheck := Some("1.6")
   )
