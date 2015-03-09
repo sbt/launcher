@@ -20,7 +20,7 @@ object Boot {
     @annotation.tailrec
     def parse(args: List[String], isLocate: Boolean, remaining: List[String]): LauncherArguments =
       args match {
-        case "--version" :: rest =>
+        case "--launcher-version" :: rest =>
           println("sbt launcher version " + Package.getPackage("xsbt.boot").getImplementationVersion)
           exit(1)
         case "--locate" :: rest => parse(rest, true, remaining)
