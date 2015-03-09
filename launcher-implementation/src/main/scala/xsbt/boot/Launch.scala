@@ -304,9 +304,9 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
       lazy val entryPoint: Class[T] forSome { type T } =
         {
           val c = Class.forName(id.mainClass, true, loader)
-          if (classOf[xsbti.AppMain].isAssignableFrom(c)) c
+          if (ServerApplication.isServerApplication(c)) c
+          else if (classOf[xsbti.AppMain].isAssignableFrom(c)) c
           else if (PlainApplication.isPlainApplication(c)) c
-          else if (ServerApplication.isServerApplication(c)) c
           else sys.error(s"${c} is not an instance of xsbti.AppMain, xsbti.ServerMain nor does it have one of these static methods:\n" +
             " * void main(String[] args)\n * int main(String[] args)\n * xsbti.Exit main(String[] args)\n")
         }
@@ -314,8 +314,8 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
       def mainClass: Class[T] forSome { type T <: xsbti.AppMain } = entryPoint.asSubclass(AppMainClass)
       def newMain(): xsbti.AppMain = {
         if (ServerApplication.isServerApplication(entryPoint)) ServerApplication(this)
-        else if (PlainApplication.isPlainApplication(entryPoint)) PlainApplication(entryPoint)
         else if (AppMainClass.isAssignableFrom(entryPoint)) mainClass.newInstance
+        else if (PlainApplication.isPlainApplication(entryPoint)) PlainApplication(entryPoint)
         else throw new IncompatibleClassChangeError(s"Main class ${entryPoint.getName} is not an instance of xsbti.AppMain, xsbti.ServerMain nor does it have a valid `main` method.")
       }
       lazy val components = componentProvider(appHome)

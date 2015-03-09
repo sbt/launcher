@@ -32,6 +32,9 @@ object ScalaProviderTest extends Specification {
       checkLoad(List("test"), "xsbt.boot.test.PlainArgumentTestWithReturn").asInstanceOf[Exit].code must equalTo(0)
       checkLoad(List(), "xsbt.boot.test.PlainArgumentTestWithReturn").asInstanceOf[Exit].code must equalTo(1)
     }
+    "Successfully load an application instead of the plain application" in {
+      checkLoad(List(), "xsbt.boot.test.PriorityTest").asInstanceOf[Exit].code must equalTo(0)
+    }
     "Successfully load an application from local repository and run it with correct sbt version" in {
       checkLoad(List(AppVersion), "xsbt.boot.test.AppVersionTest").asInstanceOf[Exit].code must equalTo(0)
     }
