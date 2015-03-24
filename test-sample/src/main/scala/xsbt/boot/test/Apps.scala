@@ -30,6 +30,16 @@ class ExtraTest extends xsbti.AppMain {
       new Exit(0)
     }
 }
+class PriorityTest extends xsbti.AppMain {
+  def run(configuration: xsbti.AppConfiguration) =
+    PriorityTest.run(configuration)
+}
+object PriorityTest {
+  def run(configuration: xsbti.AppConfiguration) =
+    new Exit(0)
+  def main(args: Array[String]): Int =
+    throw new MainException("This should not be called")
+}
 object PlainArgumentTestWithReturn {
   def main(args: Array[String]): Int =
     if (args.length == 0) 1
