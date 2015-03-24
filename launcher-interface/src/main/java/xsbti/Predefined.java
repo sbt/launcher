@@ -8,7 +8,8 @@ public enum Predefined
 	ScalaToolsReleases("scala-tools-releases"),
 	ScalaToolsSnapshots("scala-tools-snapshots"),
 	SonatypeOSSReleases("sonatype-oss-releases"),
-	SonatypeOSSSnapshots("sonatype-oss-snapshots");
+	SonatypeOSSSnapshots("sonatype-oss-snapshots"),
+    Jcenter("jcenter");
 
 	private final String label;
 	private Predefined(String label) { this.label = label; }
