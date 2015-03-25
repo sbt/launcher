@@ -57,9 +57,9 @@ lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")
 
 def sbtBuildSettings = Seq(
   version := "1.0.0-M1",
-  publishArtifact in packageDoc := false,
+  publishArtifact in packageDoc := true,
   scalaVersion := "2.10.4",
-  publishMavenStyle := false,
+  publishMavenStyle := true,
   crossPaths := false,
   resolvers += Resolver.typesafeIvyRepo("releases"),
   testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
