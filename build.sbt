@@ -57,9 +57,9 @@ lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")
 
 def sbtBuildSettings = Seq(
   version := "1.0.0-SNAPSHOT",
-  publishArtifact in packageDoc := false,
+  publishArtifact in packageDoc := true,
   scalaVersion := "2.10.4",
-  publishMavenStyle := false,
+  publishMavenStyle := true,
   crossPaths := false,
   resolvers += Resolver.typesafeIvyRepo("releases"),
   testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
@@ -74,6 +74,7 @@ LaunchProguard.specific(launchSub)
 javaOnly
 packageBin in Compile := (LaunchProguard.proguard in LaunchProguard.Proguard).value
 packageSrc in Compile := (packageSrc in Compile in launchSub).value
+packageDoc in Compile := (packageDoc in Compile in launchSub).value
 Util.commonSettings("launcher")
 Release.settings
 description := "Standalone launcher for maven/ivy deployed projects."
