@@ -316,6 +316,7 @@ final class Update(config: UpdateConfiguration) {
           case MavenCentral                               => mavenMainResolver
           case ScalaToolsReleases | SonatypeOSSReleases   => mavenResolver("Sonatype Releases Repository", "https://oss.sonatype.org/content/repositories/releases")
           case ScalaToolsSnapshots | SonatypeOSSSnapshots => scalaSnapshots(getScalaVersion)
+          case Jcenter                                    => jcenterResolver
         }
       }
     }
@@ -351,9 +352,11 @@ final class Update(config: UpdateConfiguration) {
     }
   private def useSecureResolvers = sys.props.get("sbt.repository.secure") map { _.toLowerCase == "true" } getOrElse true
   private def centralRepositoryRoot(secure: Boolean) = (if (secure) "https" else "http") + "://repo1.maven.org/maven2/"
+  private def jcenterRepositoryRoot(secure: Boolean) = (if (secure) "https" else "http") + "://jcenter.bintray.com/"
 
   /** Creates a resolver for Maven Central.*/
   private def mavenMainResolver = defaultMavenResolver("Maven Central")
+  private def jcenterResolver = mavenResolver("JCenter", jcenterRepositoryRoot(useSecureResolvers))
   /** Creates a maven-style resolver with the default root.*/
   private def defaultMavenResolver(name: String) =
     mavenResolver(name, centralRepositoryRoot(useSecureResolvers))
