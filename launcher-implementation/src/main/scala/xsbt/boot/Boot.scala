@@ -22,7 +22,7 @@ object Boot {
       args match {
         case "--launcher-version" :: rest =>
           println("sbt launcher version " + Package.getPackage("xsbt.boot").getImplementationVersion)
-          exit(1)
+          exit(0)
         case "--locate" :: rest => parse(rest, true, remaining)
         case next :: rest       => parse(rest, isLocate, next :: remaining)
         case Nil                => new LauncherArguments(remaining.reverse, isLocate)
