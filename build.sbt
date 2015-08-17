@@ -56,7 +56,7 @@ lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")
 )
 
 def sbtBuildSettings = Seq(
-  version := "1.0.0",
+  version := "1.0.1-SNAPSHOT",
   publishArtifact in packageDoc := true,
   scalaVersion := "2.10.4",
   publishMavenStyle := true,
