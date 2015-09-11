@@ -5,7 +5,7 @@ import StringUtilities.normalize
 
 object Deps {
   def lib(m: ModuleID) = libraryDependencies += m
-  lazy val sbtIo = Def.setting { "org.scala-sbt" % "io" % sbtVersion.value }
+  lazy val sbtIo = "org.scala-sbt" %% "io" % "1.0.0-M3"
   lazy val sbtCompileInterface = Def.setting("org.scala-sbt" % "interface" % sbtVersion.value)
   lazy val scalacheck = "org.scalacheck" %% "scalacheck" % "1.11.4"
   lazy val specs2 = "org.specs2" %% "specs2" % "2.3.11"

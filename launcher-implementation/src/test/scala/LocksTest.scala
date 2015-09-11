@@ -3,7 +3,7 @@ package xsbt.boot
 import org.scalacheck._
 import Prop._
 import java.io.File
-import sbt.IO.withTemporaryDirectory
+import sbt.io.IO.withTemporaryDirectory
 
 /**
  * These mainly test that things work in the uncontested case and that no OverlappingFileLockExceptions occur.

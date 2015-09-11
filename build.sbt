@@ -33,7 +33,7 @@ lazy val launchSub = noPublish(baseProject(file("launcher-implementation"), "Lau
   settings(
     libraryDependencies ++= Seq(
       ivy,
-      sbtIo.value % "test->test",
+      sbtIo % "test",
       sbtCompileInterface.value % "test",
       Deps.scalacheck % "test",
       Deps.specs2 % "test",

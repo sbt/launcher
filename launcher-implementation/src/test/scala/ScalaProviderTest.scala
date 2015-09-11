@@ -7,7 +7,7 @@ import xsbti._
 import org.specs2._
 import mutable.Specification
 import LaunchTest._
-import sbt.IO.{ createDirectory, touch, withTemporaryDirectory }
+import sbt.io.IO.{ createDirectory, touch, withTemporaryDirectory }
 
 object ScalaProviderTest extends Specification {
   "Launch" should {

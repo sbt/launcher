@@ -6,7 +6,7 @@ import java.util.Properties
 import xsbti._
 import org.specs2._
 import mutable.Specification
-import sbt.IO.{ createDirectory, touch, withTemporaryDirectory }
+import sbt.io.IO.{ createDirectory, touch, withTemporaryDirectory }
 
 object ConfigurationParserTest extends Specification {
   "Configuration Parser" should {
