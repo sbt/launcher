@@ -144,7 +144,7 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
   def getScala(version: String, reason: String, scalaOrg: String) = scalaProviders((scalaOrg, version), reason)
   def app(id: xsbti.ApplicationID, version: String): xsbti.AppProvider = app(id, Option(version))
   def app(id: xsbti.ApplicationID, scalaVersion: Option[String]): xsbti.AppProvider =
-    getAppProvider(id, scalaVersion, false)
+    getAppProvider(id, scalaVersion, true)
 
   val bootLoader = new BootFilteredLoader(getClass.getClassLoader)
   val topLoader = if (isWindows && !isCygwin) jansiLoader(bootLoader) else bootLoader
