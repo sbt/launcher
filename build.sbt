@@ -1,5 +1,6 @@
 import Deps._
 import Util._
+import com.typesafe.tools.mima.core._, ProblemFilters._
 
 // the launcher is published with metadata so that the scripted plugin can pull it in
 // being proguarded, it shouldn't ever be on a classpath with other jars, however
@@ -56,6 +57,7 @@ lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")
 )
 
 def sbtBuildSettings = Seq(
+  bintrayPackage := "launcher",
   version := "1.0.1-SNAPSHOT",
   publishArtifact in packageDoc := true,
   scalaVersion := "2.10.4",
@@ -64,7 +66,8 @@ def sbtBuildSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
   testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
   javacOptions in compile ++= Seq("-target", "6", "-source", "6", "-Xlint", "-Xlint:-serial"),
-  incOptions := incOptions.value.withNameHashing(true)
+  incOptions := incOptions.value.withNameHashing(true),
+  previousArtifact := None // Some(organization.value %% moduleName.value % "1.0.0")
 )
 
 // Configuration for the launcher root project (the proguarded launcher)
