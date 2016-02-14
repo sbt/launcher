@@ -20,16 +20,16 @@ def launchSettings =
 
 // The interface JAR for projects which want to be launched by sbt.
 lazy val launchInterfaceSub =
-  minProject(file("launcher-interface"), "Launcher Interface").settings(javaOnly: _*).settings(
+  minProject(file("launcher-interface"), "Launcher Interface").settings(javaOnly).settings(
     resourceGenerators in Compile <+= (version, resourceManaged, streams, compile in Compile) map generateVersionFile("sbt.launcher.version.properties"),
     description := "Interfaces for launching projects with the sbt launcher"
-  ).settings(Release.settings:_*)
+  ).settings(Release.settings)
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
 // TODO - move into a directory called "launcher-impl or something."
 lazy val launchSub = noPublish(baseProject(file("launcher-implementation"), "Launcher Implementation")).
   dependsOn(launchInterfaceSub).
-  settings(launchSettings: _*).
+  settings(launchSettings).
   settings(
     libraryDependencies ++= Seq(
       ivy,
@@ -81,11 +81,9 @@ description := "Standalone launcher for maven/ivy deployed projects."
 configs(LaunchProguard.Proguard)
 
 commands += Command.command("release") { state =>
-   "checkCredentials" ::
+  "checkCredentials" ::
   "clean" ::
   "test" ::
   "publishSigned" ::
   state
 }
-
-
