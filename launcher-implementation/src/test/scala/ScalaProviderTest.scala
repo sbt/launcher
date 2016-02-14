@@ -50,7 +50,8 @@ object ScalaProviderTest extends Specification {
     withTemporaryDirectory { currentDirectory =>
       withLauncher { launcher =>
         Launch.run(launcher)(
-          new RunConfiguration(Some(unmapScalaVersion(LaunchTest.getScalaVersion)), LaunchTest.testApp(mainClassName, extra(currentDirectory)).toID, currentDirectory, arguments))
+          new RunConfiguration(Some(unmapScalaVersion(LaunchTest.getScalaVersion)), LaunchTest.testApp(mainClassName, extra(currentDirectory)).toID, currentDirectory, arguments)
+        )
       }
     }
   private def testResources = List("test-resourceA", "a/b/test-resourceB", "sub/test-resource")

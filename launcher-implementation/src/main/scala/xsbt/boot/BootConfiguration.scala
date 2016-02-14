@@ -104,7 +104,8 @@ private final class ProxyProperties(
   val sysHost: String,
   val sysPort: String,
   val sysUser: String,
-  val sysPassword: String)
+  val sysPassword: String
+)
 private object ProxyProperties {
   val http = apply("http")
   val https = apply("https")
@@ -117,5 +118,6 @@ private object ProxyProperties {
     pre + ".proxyHost",
     pre + ".proxyPort",
     pre + ".proxyUser",
-    pre + ".proxyPassword")
+    pre + ".proxyPassword"
+  )
 }
