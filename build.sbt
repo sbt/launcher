@@ -1,5 +1,6 @@
 import Deps._
 import Util._
+import com.typesafe.tools.mima.core._, ProblemFilters._
 
 // the launcher is published with metadata so that the scripted plugin can pull it in
 // being proguarded, it shouldn't ever be on a classpath with other jars, however
@@ -20,16 +21,16 @@ def launchSettings =
 
 // The interface JAR for projects which want to be launched by sbt.
 lazy val launchInterfaceSub =
-  minProject(file("launcher-interface"), "Launcher Interface").settings(javaOnly: _*).settings(
+  minProject(file("launcher-interface"), "Launcher Interface").settings(javaOnly).settings(
     resourceGenerators in Compile <+= (version, resourceManaged, streams, compile in Compile) map generateVersionFile("sbt.launcher.version.properties"),
     description := "Interfaces for launching projects with the sbt launcher"
-  ).settings(Release.settings:_*)
+  ).settings(Release.settings)
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
 // TODO - move into a directory called "launcher-impl or something."
 lazy val launchSub = noPublish(baseProject(file("launcher-implementation"), "Launcher Implementation")).
   dependsOn(launchInterfaceSub).
-  settings(launchSettings: _*).
+  settings(launchSettings).
   settings(
     libraryDependencies ++= Seq(
       ivy,
@@ -56,6 +57,7 @@ lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")
 )
 
 def sbtBuildSettings = Seq(
+  bintrayPackage := "launcher",
   version := "1.0.1-SNAPSHOT",
   publishArtifact in packageDoc := true,
   scalaVersion := "2.10.4",
@@ -64,7 +66,8 @@ def sbtBuildSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
   testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
   javacOptions in compile ++= Seq("-target", "6", "-source", "6", "-Xlint", "-Xlint:-serial"),
-  incOptions := incOptions.value.withNameHashing(true)
+  incOptions := incOptions.value.withNameHashing(true),
+  previousArtifact := None // Some(organization.value %% moduleName.value % "1.0.0")
 )
 
 // Configuration for the launcher root project (the proguarded launcher)
@@ -81,11 +84,9 @@ description := "Standalone launcher for maven/ivy deployed projects."
 configs(LaunchProguard.Proguard)
 
 commands += Command.command("release") { state =>
-   "checkCredentials" ::
+  "checkCredentials" ::
   "clean" ::
   "test" ::
   "publishSigned" ::
   state
 }
-
-

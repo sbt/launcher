@@ -10,9 +10,9 @@ object ListMapProperties extends Properties("ListMap") {
     list forall { entry => map contains entry._1 }
   }
   property("contains added entry") = Prop.forAll { (map: ListMap[Int, Int], key: Int, value: Int) =>
-    { (map + (key, value)) contains (key) } &&
-      { (map + (key, value))(key) == value } &&
-      { (map + (key, value)).get(key) == Some(value) }
+    { (map + (key -> value)) contains (key) } &&
+      { (map + (key -> value))(key) == value } &&
+      { (map + (key -> value)).get(key) == Some(value) }
   }
   property("remove") = Prop.forAll { (map: ListMap[Int, Int], key: Int) =>
     { Prop.throws(classOf[Exception])((map - key)(key)) } &&
