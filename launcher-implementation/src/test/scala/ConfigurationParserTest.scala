@@ -79,6 +79,10 @@ object ConfigurationParserTest extends Specification {
       repoFileContains("""|[repositories]
                                             |  id: https://repo1.maven.org, [orgPath], [artPath], mavenCompatible, bootOnly""".stripMargin,
         Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", true, true))
+        
+      repoFileContains("""|[repositories]
+                                            |  id: ssh://some.server/some/path, [orgPath], [artPath]""".stripMargin,
+        Repository.Ivy("id", new URL("ssh://some.server/some/path"), "[orgPath]", "[artPath]", false, false))
 
     }
   }
