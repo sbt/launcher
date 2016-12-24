@@ -113,7 +113,7 @@ object LaunchProguard {
     val inJar = packageBin.value
     val outputJar = artifactPath.value
     val configFile = proguardConfiguration.value
-    val f = FileFunction.cached(cacheDirectory.value / "proguard", FilesInfo.hash) { _ =>
+    val f = FileFunction.cached(streams.value.cacheDirectory / "proguard", FilesInfo.hash) { _ =>
       runProguard(outputJar, configFile, fullClasspath.value.files, streams.value.log)
       Set(outputJar)
     }
@@ -144,7 +144,7 @@ object LaunchProguard {
 
   private def excludeString(s: List[String]) = s.map("!" + _).mkString("(", ",", ")")
 
-  private def withJar[T](files: Seq[File], name: String) = mkpath(files.headOption getOrElse error(name + " not present"))
+  private def withJar[T](files: Seq[File], name: String) = mkpath(files.headOption getOrElse sys.error(name + " not present"))
   private def isJarX(x: String)(file: File) =
     {
       val name = file.getName

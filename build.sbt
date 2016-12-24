@@ -15,14 +15,16 @@ def launchSettings =
     inConfig(Compile)(Transform.configSettings) ++
     inConfig(Compile)(Transform.transSourceSettings ++ Seq(
       // TODO - these should be shared between sbt core + sbt-launcher...
-      Transform.inputSourceDirectory <<= sourceDirectory / "input_sources",
+      Transform.inputSourceDirectory := sourceDirectory.value / "input_sources",
       Transform.sourceProperties := Map("cross.package0" -> "xsbt", "cross.package1" -> "boot")
     ))
 
 // The interface JAR for projects which want to be launched by sbt.
 lazy val launchInterfaceSub =
   minProject(file("launcher-interface"), "Launcher Interface").settings(javaOnly).settings(
-    resourceGenerators in Compile <+= (version, resourceManaged, streams, compile in Compile) map generateVersionFile("sbt.launcher.version.properties"),
+    resourceGenerators in Compile += Def.task{
+      generateVersionFile("sbt.launcher.version.properties")(version.value, resourceManaged.value, streams.value, (compile in Compile).value)
+    }.taskValue,
     description := "Interfaces for launching projects with the sbt launcher"
   ).settings(Release.settings)
 
