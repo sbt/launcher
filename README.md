@@ -16,7 +16,7 @@ This project provides two modules for general use:
 1. A library for interacting with Launcher features as a launched application, or for defining a launched Server.
 2. A minimal JAR that can be used to lookup your application, using Ivy, and load/run it.
 
-This minmal JAR file is designed to be:
+This minimal JAR file is designed to be:
 
 * Less than 1MB in size
 * Able to launch any application on the JVM
