@@ -141,7 +141,7 @@ final class Update(config: UpdateConfiguration) {
             case _                                   => app.name
           }
           val ddesc = addDependency(moduleID, app.groupID, resolvedName, app.getVersion, "default(compile)", u.classifiers)
-          System.out.println("Getting " + app.groupID + " " + resolvedName + " " + app.getVersion + " " + reason + "...")
+          System.out.println("Getting " + app.groupID + " " + resolvedName + " " + app.getVersion + " " + reason + " (this may take some time)...")
           ddesc.getDependencyId
       }
       update(moduleID, target, dep)
