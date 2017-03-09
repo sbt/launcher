@@ -17,7 +17,9 @@ object Transform {
   lazy val conscriptConfigs = TaskKey[Unit]("conscript-configs")
 
   def conscriptSettings(launch: Reference) = Seq(
-    conscriptConfigs <<= (managedResources in launch in Compile, sourceDirectory in Compile).map { (res, src) =>
+    conscriptConfigs := {
+      val res = (managedResources in launch in Compile).value
+      val src = (sourceDirectory in Compile).value
       val source = res.filter(_.getName == "sbt.boot.properties").headOption getOrElse sys.error("No managed boot.properties file.")
       copyConscriptProperties(source, src / "conscript")
       ()
@@ -42,39 +44,50 @@ object Transform {
     IO.writeLines(target, IO.readLines(source) map subMain)
   }
 
-  def crossGenSettings = transSourceSettings ++ seq(
+  def crossGenSettings = transSourceSettings ++ Seq(
     sourceProperties := Map("cross.package0" -> "sbt", "cross.package1" -> "cross")
   )
-  def transSourceSettings = seq(
-    inputSourceDirectory <<= sourceDirectory / "input_sources",
-    inputSourceDirectories <<= Seq(inputSourceDirectory).join,
-    inputSources <<= inputSourceDirectories.map(dirs => (dirs ** (-DirectoryFilter)).get),
-    fileMappings in transformSources <<= transformSourceMappings,
-    transformSources <<= (fileMappings in transformSources, sourceProperties) map { (rs, props) =>
-      rs map { case (in, out) => transform(in, out, props) }
+  def transSourceSettings = Seq(
+    inputSourceDirectory := sourceDirectory.value / "input_sources",
+    inputSourceDirectories := Seq(inputSourceDirectory.value),
+    inputSources := (inputSourceDirectories.value ** (-DirectoryFilter)).get,
+    fileMappings in transformSources := transformSourceMappings.value,
+    transformSources := {
+      (fileMappings in transformSources).value.map { case (in, out) => transform(in, out, sourceProperties.value) }
     },
-    sourceGenerators <+= transformSources
+    sourceGenerators += transformSources.taskValue
   )
-  def transformSourceMappings = (inputSources, inputSourceDirectories, sourceManaged) map { (ss, sdirs, sm) =>
-    (ss --- sdirs) x (rebase(sdirs, sm) | flat(sm)) toSeq
+  def transformSourceMappings = Def.task{
+    val ss = inputSources.value
+    val sdirs = inputSourceDirectories.value
+    val sm = sourceManaged.value
+    (ss --- sdirs) pair (rebase(sdirs, sm) | flat(sm)) toSeq
   }
-  def configSettings = transResourceSettings ++ seq(
-    resourceProperties <<= (organization, version, scalaVersion, isSnapshot) map { (org, v, sv, isSnapshot) =>
-      Map("org" -> org, "sbt.version" -> v, "scala.version" -> sv, "repositories" -> repositories(isSnapshot).mkString(IO.Newline))
+  def configSettings = transResourceSettings ++ Seq(
+    resourceProperties := {
+      Map(
+        "org" -> organization.value,
+        "sbt.version" -> version.value,
+        "scala.version" -> scalaVersion.value,
+        "repositories" -> repositories(isSnapshot.value).mkString(IO.Newline)
+      )
     }
   )
-  def transResourceSettings = seq(
-    inputResourceDirectory <<= sourceDirectory / "input_resources",
-    inputResourceDirectories <<= Seq(inputResourceDirectory).join,
-    inputResources <<= inputResourceDirectories.map(dirs => (dirs ** (-DirectoryFilter)).get),
-    fileMappings in transformResources <<= transformResourceMappings,
-    transformResources <<= (fileMappings in transformResources, resourceProperties) map { (rs, props) =>
-      rs map { case (in, out) => transform(in, out, props) }
+  def transResourceSettings = Seq(
+    inputResourceDirectory := sourceDirectory.value / "input_resources",
+    inputResourceDirectories := Seq(inputResourceDirectory.value),
+    inputResources := (inputResourceDirectories.value ** (-DirectoryFilter)).get,
+    fileMappings in transformResources := transformResourceMappings.value,
+    transformResources := {
+      (fileMappings in transformResources).value.map { case (in, out) => transform(in, out, resourceProperties.value) }
     },
-    resourceGenerators <+= transformResources
+    resourceGenerators += transformResources.taskValue
   )
-  def transformResourceMappings = (inputResources, inputResourceDirectories, resourceManaged) map { (rs, rdirs, rm) =>
-    (rs --- rdirs) x (rebase(rdirs, rm) | flat(rm)) toSeq
+  def transformResourceMappings = Def.task{
+    val rs = inputResources.value
+    val rdirs = inputResourceDirectories.value
+    val rm = resourceManaged.value
+    (rs --- rdirs) pair (rebase(rdirs, rm) | flat(rm)) toSeq
   }
 
   def transform(in: File, out: File, map: Map[String, String]): File =

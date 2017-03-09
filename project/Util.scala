@@ -1,6 +1,5 @@
 import sbt._
 import Keys._
-import StringUtilities.normalize
 
 object Util {
 
@@ -14,7 +13,7 @@ object Util {
     publishMavenStyle := true
   )
 
-  def minProject(path: File, nameString: String) = Project(normalize(nameString), path) settings (commonSettings(nameString) ++ Release.javaVersionCheckSettings: _*)
+  def minProject(path: File, nameString: String) = Project(Project.normalizeModuleID(nameString), path) settings (commonSettings(nameString) ++ Release.javaVersionCheckSettings: _*)
   def baseProject(path: File, nameString: String) = minProject(path, nameString) settings (base: _*)
 
   /** Configures a project to be java only. */
@@ -26,16 +25,16 @@ object Util {
   lazy val base: Seq[Setting[_]] = baseScalacOptions ++ Licensed.settings
   lazy val baseScalacOptions = Seq(
     scalacOptions ++= Seq("-Xelide-below", "0"),
-    scalacOptions <++= scalaVersion map CrossVersion.partialVersion map {
+    scalacOptions ++= {CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 9)) => Nil // support 2.9 for some subprojects for the Scala Eclipse IDE
       case _            => Seq("-feature", "-language:implicitConversions", "-language:postfixOps", "-language:higherKinds", "-language:existentials")
-    },
-    scalacOptions <++= scalaVersion map CrossVersion.partialVersion map {
+    }},
+    scalacOptions ++= {CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 10)) => Seq("-deprecation", "-Xlint")
       case _             => Seq()
-    }
+    }}
   )
-  lazy val minimalSettings: Seq[Setting[_]] = Defaults.paths ++ Seq[Setting[_]](crossTarget := target.value, name <<= thisProject(_.id))
+  lazy val minimalSettings: Seq[Setting[_]] = Defaults.paths ++ Seq[Setting[_]](crossTarget := target.value, name := thisProject(_.id).value)
 
 
   def lastCompilationTime(analysis: sbt.inc.Analysis): Long =
@@ -69,9 +68,9 @@ object Licensed {
   def seePaths(base: File, noticeString: String): Seq[File] = seeRegex.findAllIn(noticeString).matchData.map(d => licensePath(base, d.group(1))).toList
 
   def settings: Seq[Setting[_]] = Seq(
-    notice <<= baseDirectory(_ / "NOTICE"),
-    unmanagedResources in Compile <++= (notice, extractLicenses) map { _ +: _ },
-    extractLicenses <<= (baseDirectory in ThisBuild, notice, streams) map extractLicenses0
+    notice := baseDirectory.value / "NOTICE",
+    unmanagedResources in Compile ++= (notice.value +: extractLicenses.value),
+    extractLicenses := extractLicenses0((baseDirectory in ThisBuild).value, notice.value, streams.value)
   )
   def extractLicenses0(base: File, note: File, s: TaskStreams): Seq[File] =
     if (!note.exists) Nil else
