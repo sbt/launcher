@@ -29,19 +29,11 @@ object Release {
       browseUrl = new java.net.URL("http://github.com/sbt/launcher"),
       connection = "scm:git@github.com:sbt/launcher.git"
     )),
-    pomExtra := (
-      <developers>
-        <developer>
-          <id>jsuereth</id>
-          <name>Josh Suereth</name>
-          <url>http://jsuereth.com</url>
-        </developer>
-        <developer>
-          <id>eed3si9n</id>
-          <name>Eugene Yokota</name>
-          <url>http://eed3si9n.com/</url>
-        </developer>
-      </developers>),
+    developers := List(
+      Developer("eed3si9n", "Eugene Yokota", "@eed3si9n", url("https://github.com/eed3si9n")),
+      Developer("jsuereth", "Josh Suereth", "@jsuereth", url("https://github.com/jsuereth")),
+      Developer("dwijnand", "Dale Wijnand", "@dwijnand", url("https://github.com/dwijnand"))
+    ),
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
       if (version.value.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
