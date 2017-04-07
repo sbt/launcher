@@ -48,11 +48,11 @@ object Boot {
         errorAndExit(Pre.prefixError(e.toString))
     }
 
-  private def errorAndExit(msg: String): Nothing =
-    {
-      System.out.println(msg)
-      exit(1)
-    }
+  private def errorAndExit(msg: String): Nothing = {
+    System.err.println(msg)
+    exit(1)
+  }
+
   private def exit(code: Int): Nothing =
     System.exit(code).asInstanceOf[Nothing]
 }

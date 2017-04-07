@@ -85,7 +85,7 @@ object Locks extends xsbti.GlobalLock {
           {
             val freeLock = try { channel.tryLock } catch { case e: NullPointerException => throw new InternalLockNPE(e) }
             if (freeLock eq null) {
-              System.out.println("Waiting for lock on " + file + " to be available...");
+              System.err.println("Waiting for lock on " + file + " to be available...");
               val lock = try { channel.lock } catch { case e: NullPointerException => throw new InternalLockNPE(e) }
               try { run.call }
               finally { lock.release() }

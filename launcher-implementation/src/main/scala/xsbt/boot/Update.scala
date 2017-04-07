@@ -107,7 +107,7 @@ final class Update(config: UpdateConfiguration) {
         case e: Exception =>
           e.printStackTrace(logWriter)
           log(e.toString)
-          System.out.println("  (see " + logFile + " for complete log)")
+          System.err.println("  (see " + logFile + " for complete log)")
           new UpdateResult(false, None, None)
       } finally {
         logWriter.close()
@@ -131,7 +131,7 @@ final class Update(config: UpdateConfiguration) {
           val ddesc = addDependency(moduleID, scalaOrg, LibraryModuleName, scalaVersion, "default", u.classifiers)
           excludeJUnit(moduleID)
           val scalaOrgString = if (scalaOrg != ScalaOrg) " " + scalaOrg else ""
-          System.out.println("Getting" + scalaOrgString + " Scala " + scalaVersion + " " + reason + "...")
+          System.err.println("Getting" + scalaOrgString + " Scala " + scalaVersion + " " + reason + "...")
           ddesc.getDependencyId
         case u: UpdateApp =>
           val app = u.id
@@ -141,7 +141,7 @@ final class Update(config: UpdateConfiguration) {
             case _                                   => app.name
           }
           val ddesc = addDependency(moduleID, app.groupID, resolvedName, app.getVersion, "default(compile)", u.classifiers)
-          System.out.println("Getting " + app.groupID + " " + resolvedName + " " + app.getVersion + " " + reason + " (this may take some time)...")
+          System.err.println("Getting " + app.groupID + " " + resolvedName + " " + app.getVersion + " " + reason + " (this may take some time)...")
           ddesc.getDependencyId
       }
       update(moduleID, target, dep)
@@ -205,7 +205,7 @@ final class Update(config: UpdateConfiguration) {
         logExceptions(resolveReport)
         val seen = new java.util.LinkedHashSet[Any]
         seen.addAll(resolveReport.getAllProblemMessages)
-        System.out.println(seen.toArray.mkString(System.getProperty("line.separator")))
+        System.err.println(seen.toArray.mkString(System.getProperty("line.separator")))
         error("Error retrieving required libraries")
       }
       val modules = moduleRevisionIDs(resolveReport)
