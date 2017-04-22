@@ -31,7 +31,9 @@ object Locks extends xsbti.GlobalLock {
       val lock =
         synchronized {
           file.getParentFile.mkdirs()
-          file.createNewFile()
+          try file.createNewFile() catch {
+            case e: IOException => throw new IOException(s"Failed to create lock file $file", e)
+          }
           locks(file.getCanonicalFile, ())
         }
       lock.withLock(action)
