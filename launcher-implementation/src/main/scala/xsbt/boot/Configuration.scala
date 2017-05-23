@@ -38,11 +38,11 @@ object Configuration {
         (url, args, PropertiesFile)
     }
   def setProperty(head: String) {
-    val keyValue = head.split("=", 2)
-    if (keyValue.length != 2)
-      System.err.println("Warning: invalid system property '" + head + "'")
-    else
-      System.setProperty(keyValue(0), keyValue(1))
+    head.split("=", 2) match {
+      case Array("") => System.err.println(s"Warning: invalid system property '$head'")
+      case Array(key) => sys.props += key -> ""
+      case Array(key, value) => sys.props += key -> value
+    }
   }
   def configurationOnClasspath: URL =
     {
