@@ -2,7 +2,7 @@
 
 This project is the componetized sbt launcher.   It can be used to launch many Maven/Ivy deployed applications
 and utilities, and forms the basis of [sbt](https://github.com/sbt/sbt),
-[activator](https://github.com/typesafehub/activator) and [conscript](https://github.com/n8han/conscript)'s launching
+[activator](https://github.com/typesafehub/activator) and [conscript](https://github.com/foundweekends/conscript)'s launching
 abilities.
 
 For the full set of documentation, read: http://www.scala-sbt.org/0.13/docs/Sbt-Launcher.html
