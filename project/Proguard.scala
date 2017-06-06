@@ -28,6 +28,8 @@ object LaunchProguard {
     options ++= keepFullClasses.value map ("-keep public class " + _ + " {\n\tpublic protected * ;\n}"),
     options += "-keep public class xsbt.boot.ConfigurationParser {\n\tpublic scala.collection.immutable.List getRepositories(scala.collection.Seq);\n}",
     options += "-keepnames class scala.collection.Seq",
+    options += "-keepnames class scala.Tuple2",
+    options += "-keepnames class scala.Option",
     options += "-keepnames class scala.collection.immutable.List",
     configurationFile := target.value / "proguard.pro",
     proguardConfiguration := writeProguardConfiguration.value,
