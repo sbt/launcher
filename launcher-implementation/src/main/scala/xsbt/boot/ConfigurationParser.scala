@@ -185,6 +185,7 @@ class ConfigurationParser {
         ServerConfiguration(file, args, props)
       }
     }
+  def getRepositories(m: Seq[(String, Option[String])]): List[xsbti.Repository] = getRepositories(ListMap[String, Option[String]](m: _*))
   def getRepositories(m: LabelMap): List[Repository.Repository] =
     {
       import Repository.{ Ivy, Maven, Predefined }
