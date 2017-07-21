@@ -25,7 +25,8 @@ lazy val launchInterfaceSub =
     resourceGenerators in Compile += Def.task{
       generateVersionFile("sbt.launcher.version.properties")(version.value, resourceManaged.value, streams.value, (compile in Compile).value)
     }.taskValue,
-    description := "Interfaces for launching projects with the sbt launcher"
+    description := "Interfaces for launching projects with the sbt launcher",
+    mimaPreviousArtifacts := Set(organization.value % moduleName.value % "1.0.1")
   ).settings(Release.settings)
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
@@ -47,6 +48,7 @@ lazy val launchSub = noPublish(baseProject(file("launcher-implementation"), "Lau
       val ignore2 = (publishLocal in launchInterfaceSub).value
       (compile in Test).value
     }
+    // TODO: Configure MiMa, deal with Proguard
   )
 
 // used to test the retrieving and loading of an application: sample app is packaged and published to the local repository
@@ -68,8 +70,7 @@ def sbtBuildSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
   testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
   javacOptions in compile ++= Seq("-target", "6", "-source", "6", "-Xlint", "-Xlint:-serial"),
-  incOptions := incOptions.value.withNameHashing(true),
-  previousArtifact := None // Some(organization.value %% moduleName.value % "1.0.0")
+  incOptions := incOptions.value.withNameHashing(true)
 )
 
 // Configuration for the launcher root project (the proguarded launcher)
