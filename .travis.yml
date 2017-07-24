@@ -15,7 +15,7 @@ jdk:
 
 env:
   matrix:
-    - SCRIPTED_TEST="; test; proguard"
+    - SCRIPTED_TEST="; mimaReportBinaryIssues; test; proguard"
 
 notifications:
   email:
