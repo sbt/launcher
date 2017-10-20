@@ -8,6 +8,11 @@ cache:
 
 language: scala
 
+addons:
+  apt:
+    packages:
+      - openjdk-6-jdk
+
 # TODO - we'd like to actually test everything, but the process library has a deadlock right now
 jdk:
   - openjdk6
