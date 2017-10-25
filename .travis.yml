@@ -22,10 +22,9 @@ env:
   matrix:
     - SCRIPTED_TEST="; mimaReportBinaryIssues; test; proguard"
 
-notifications:
-  email:
-    - eugene.yokota@typesafe.com
-    - joshua.suereth@typesafe.com
+# Undo _JAVA_OPTIONS environment variable
+before_script:
+  - _JAVA_OPTIONS=
 
 script:
   - sbt -J-XX:ReservedCodeCacheSize=128m "$SCRIPTED_TEST"
