@@ -24,7 +24,7 @@ env:
 
 # Undo _JAVA_OPTIONS environment variable
 before_script:
-  - _JAVA_OPTIONS=
+  - unset _JAVA_OPTIONS
 
 script:
   - sbt -J-XX:ReservedCodeCacheSize=128m "$SCRIPTED_TEST"
