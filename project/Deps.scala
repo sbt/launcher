@@ -12,6 +12,6 @@ object Deps {
   lazy val junit = "junit" % "junit" % "4.11"
 
   // TODO - these should be like the above, just ModuleIDs
-  lazy val ivy = "org.scala-sbt.ivy" % "ivy" % "2.3.0-sbt-1b57d3bbc08ecf671169fd548918da18c91f77be"
+  lazy val ivy = "org.scala-sbt.ivy" % "ivy" % "2.3.0-sbt-b18f59ea3bc914a297bb6f1a4f7fb0ace399e310"
   lazy val scalaCompiler = Def.setting("org.scala-lang" % "scala-compiler" % scalaVersion.value)
 }
