@@ -2,11 +2,12 @@ import sbt._
 import Keys._
 
 object Util {
+  val publishSigned = TaskKey[Unit]("publish-signed", "Publishing all artifacts, but SIGNED using PGP.")
 
   def noPublish(p: Project) = p.settings(noRemotePublish:_*)
   def noRemotePublish: Seq[Setting[_]] =
     // TODO - publishSigned
-    Seq(publish := ())
+    Seq(publish := (), publishSigned := ())
   def commonSettings(nameString: String) = Seq(
     name := nameString,
     resolvers += Resolver.typesafeIvyRepo("releases"),

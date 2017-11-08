@@ -10,16 +10,10 @@ object Release {
   lazy val remoteID = SettingKey[String]("remote-id")
   lazy val launcherRemotePath = SettingKey[String]("launcher-remote-path")
   lazy val deployLauncher = TaskKey[Unit]("deploy-launcher", "Upload the launcher to its traditional location for compatibility with existing scripts.")
-  lazy val checkCredentials = TaskKey[Unit]("checkCredentials", "Checks to ensure credentials for this user exists.")
 
   val PublishRepoHost = "private-repo.typesafe.com"
 
   def settings: Seq[Setting[_]] = Seq(
-    // TODO - Fix release settings
-    checkCredentials := {
-      // Note - This will either issue a failure or succeed.
-      getCredentials(credentials.value, streams.value.log)
-    },
     // Maven central cannot allow other repos.  We're ok here because the artifacts we
     // we use externally are *optional* dependencies.
     pomIncludeRepository := { x => false },

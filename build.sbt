@@ -87,7 +87,6 @@ description := "Standalone launcher for maven/ivy deployed projects."
 configs(LaunchProguard.Proguard)
 
 commands += Command.command("release") { state =>
-  "checkCredentials" ::
   "clean" ::
   "test" ::
   "publishSigned" ::
