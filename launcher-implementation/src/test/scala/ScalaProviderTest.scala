@@ -15,8 +15,10 @@ object ScalaProviderTest extends Specification {
     "provide ClassLoader for Scala 2.8.2" in { checkScalaLoader("2.8.2") }
     "provide ClassLoader for Scala 2.9.0" in { checkScalaLoader("2.9.0") }
     "provide ClassLoader for Scala 2.9.2" in { checkScalaLoader("2.9.2") }
-    "provide ClassLoader for Scala 2.10.4" in { checkScalaLoader("2.10.4") }
-    "provide ClassLoader for Scala 2.11.0" in { checkScalaLoader("2.11.0") }
+    "provide ClassLoader for Scala 2.10.7" in { checkScalaLoader("2.10.7") }
+    "provide ClassLoader for Scala 2.11.12" in { checkScalaLoader("2.11.12") }
+    // This requires the test to run in JDK 8
+    // "provide ClassLoader for Scala 2.12.4" in { checkScalaLoader("2.12.4") }
   }
 
   "Launch" should {
@@ -68,10 +70,20 @@ object ScalaProviderTest extends Specification {
       val provider = launcher.getScala(version)
       val loader = provider.loader
       // ensure that this loader can load Scala classes by trying scala.ScalaObject.
-      tryScala(loader)
+      tryScala(loader, loader.getParent)
       getScalaVersion(loader) must beEqualTo(versionValue)
+
+      val libraryLoader = provider.loader.getParent
+      // Test the structural type
+      libraryLoader match {
+        case x: ClassLoader with LibraryLoader => x.scalaVersion must be(version)
+      }
+      tryScala(libraryLoader, libraryLoader)
     }
-  private def tryScala(loader: ClassLoader) = Class.forName("scala.Product", false, loader).getClassLoader must be(loader)
+  private def tryScala(loader: ClassLoader, libraryLoader: ClassLoader) =
+    Class.forName("scala.Product", false, loader).getClassLoader must be(libraryLoader)
+
+  type LibraryLoader = { def scalaVersion: String }
 }
 object LaunchTest {
   def testApp(main: String): Application = testApp(main, Array[File]())

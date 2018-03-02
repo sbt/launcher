@@ -328,7 +328,7 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
 
     private object LoaderInit {
       val (library, other) = module.fullClasspath.partition(_.getName.startsWith("scala-library"))
-      val libraryLoader = new URLClassLoader(toURLs(library), parentLoader)
+      val libraryLoader = new LibraryClassLoader(toURLs(library), parentLoader, scalaVersion)
       val fullLoader = new URLClassLoader(toURLs(other), libraryLoader)
     }
 
