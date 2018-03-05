@@ -322,11 +322,18 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
     }
   def componentProvider(appHome: File) = new ComponentProvider(appHome, lockBoot)
 
-  def scalaProvider(scalaVersion: String, module: RetrievedModule, parentLoader: ClassLoader, scalaLibDir: File): xsbti.ScalaProvider = new xsbti.ScalaProvider {
+  def scalaProvider(scalaVersion: String, module: RetrievedModule, parentLoader: ClassLoader, scalaLibDir: File): xsbti.ScalaProvider = new xsbti.ExtendedScalaProvider {
     def launcher = Launch.this
     def version = scalaVersion
-    lazy val loader = module.createLoader(parentLoader)
 
+    private object LoaderInit {
+      val (library, other) = module.fullClasspath.partition(_.getName.startsWith("scala-library"))
+      val libraryLoader = new LibraryClassLoader(toURLs(library), parentLoader, scalaVersion)
+      val fullLoader = new URLClassLoader(toURLs(other), libraryLoader)
+    }
+
+    override def loaderLibraryOnly(): ClassLoader = LoaderInit.libraryLoader
+    override def loader(): ClassLoader = LoaderInit.fullLoader
     def compilerJar = new File(scalaLibDir, CompilerModuleName + ".jar")
     def libraryJar = new File(scalaLibDir, LibraryModuleName + ".jar")
     def jars = module.fullClasspath
