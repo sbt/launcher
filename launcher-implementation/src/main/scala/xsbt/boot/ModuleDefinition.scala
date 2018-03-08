@@ -17,8 +17,9 @@ final class RetrievedModule(val fresh: Boolean, val definition: ModuleDefinition
   def this(fresh: Boolean, definition: ModuleDefinition, detectedScalaVersion: Option[String], baseDirectories: List[File]) =
     this(fresh, definition, detectedScalaVersion, None, baseDirectories)
 
+  lazy val monkeys: Array[File] = sys.props.get("sbt.launcher.monkeys").toArray.flatMap(ms => ms.split(",").map(new File(_)))
   lazy val classpath: Array[File] = getJars(baseDirectories)
-  lazy val fullClasspath: Array[File] = concat(classpath, definition.extraClasspath)
+  lazy val fullClasspath: Array[File] = concat(concat(monkeys, classpath), definition.extraClasspath)
 
   def createLoader(parentLoader: ClassLoader): ClassLoader =
     new URLClassLoader(toURLs(fullClasspath), parentLoader)
