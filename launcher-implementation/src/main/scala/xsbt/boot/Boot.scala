@@ -8,6 +8,7 @@ import java.io.File
 // The entry point to the launcher
 object Boot {
   def main(args: Array[String]) {
+    standBy()
     val config = parseArgs(args)
     // If we havne't exited, we set up some hooks and launch
     System.clearProperty("scala.home") // avoid errors from mixing Scala versions in the same JVM
@@ -16,6 +17,20 @@ object Boot {
     CheckProxy()
     run(config)
   }
+
+  def standBy(): Unit = {
+    import scala.concurrent.duration.Duration
+    sys.props.get("sbt.launcher.standby") foreach { s =>
+      val sec = Duration(s).toSeconds
+      if (sec >= 1) {
+        (sec to 1 by -1) foreach { i =>
+          println(s"[info] Standing by: $i")
+          Thread.sleep(1000)
+        }
+      }
+    }
+  }
+
   def parseArgs(args: Array[String]): LauncherArguments = {
     @annotation.tailrec
     def parse(args: List[String], isLocate: Boolean, remaining: List[String]): LauncherArguments =
