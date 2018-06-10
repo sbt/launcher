@@ -5,7 +5,15 @@ public enum Predefined
 	Local("local"),
 	MavenLocal("maven-local"),
 	MavenCentral("maven-central"),
+	/**
+	 * @deprecated use {@link #SonatypeOSSReleases} instead.
+	 */
+	@Deprecated
 	ScalaToolsReleases("scala-tools-releases"),
+	/**
+	 * @deprecated use {@link #SonatypeOSSSnapshots} instead.
+	 */
+	@Deprecated
 	ScalaToolsSnapshots("scala-tools-snapshots"),
 	SonatypeOSSReleases("sonatype-oss-releases"),
 	SonatypeOSSSnapshots("sonatype-oss-snapshots"),
