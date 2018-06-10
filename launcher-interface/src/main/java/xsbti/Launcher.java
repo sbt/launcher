@@ -53,7 +53,7 @@ public interface Launcher
 	 * Use this setting in an application when using Ivy to resolve
 	 * more artifacts.
 	 *
-	 * @returns a file, or null if not set.
+	 * @return a file, or null if not set.
 	 */
 	public File ivyHome();
 	/** An array of the checksums that should be checked when retreiving artifacts.
