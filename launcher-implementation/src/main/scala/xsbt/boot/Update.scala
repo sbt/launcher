@@ -310,14 +310,28 @@ final class Update(config: UpdateConfiguration) {
       repo match {
         case m: xsbti.MavenRepository => mavenResolver(m.id, m.url.toString)
         case i: xsbti.IvyRepository   => urlResolver(i.id, i.url.toString, i.ivyPattern, i.artifactPattern, i.mavenCompatible, i.descriptorOptional, i.skipConsistencyCheck)
-        case p: xsbti.PredefinedRepository => p.id match {
-          case Local                                      => localResolver(settings.getDefaultIvyUserDir.getAbsolutePath)
-          case MavenLocal                                 => mavenLocal
-          case MavenCentral                               => mavenMainResolver
-          case ScalaToolsReleases | SonatypeOSSReleases   => mavenResolver("Sonatype Releases Repository", "https://oss.sonatype.org/content/repositories/releases")
-          case ScalaToolsSnapshots | SonatypeOSSSnapshots => scalaSnapshots(getScalaVersion)
-          case Jcenter                                    => jcenterResolver
-        }
+        case p: xsbti.PredefinedRepository =>
+          val sonatypeReleases = mavenResolver("Sonatype Releases Repository", "https://oss.sonatype.org/content/repositories/releases")
+          p.id match {
+            case Local =>
+              localResolver(settings.getDefaultIvyUserDir.getAbsolutePath)
+            case MavenLocal =>
+              mavenLocal
+            case MavenCentral =>
+              mavenMainResolver
+            case ScalaToolsReleases =>
+              log(s"$ScalaToolsReleases deprecated. use $SonatypeOSSReleases instead.")
+              sonatypeReleases
+            case SonatypeOSSReleases =>
+              sonatypeReleases
+            case ScalaToolsSnapshots =>
+              log(s"$ScalaToolsSnapshots deprecated. use $SonatypeOSSSnapshots instead.")
+              scalaSnapshots(getScalaVersion)
+            case SonatypeOSSSnapshots =>
+              scalaSnapshots(getScalaVersion)
+            case Jcenter =>
+              jcenterResolver
+          }
       }
     }
   private def onDefaultRepositoryCacheManager(settings: IvySettings)(f: DefaultRepositoryCacheManager => Unit) {
