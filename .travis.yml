@@ -1,26 +1,21 @@
-# Use Docker-based container (instead of OpenVZ)
 sudo: false
-
-cache:
-  directories:
-    - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot
+dist: trusty
+group: stable
 
 language: scala
 
-addons:
-  apt:
-    packages:
-      - openjdk-6-jdk
-
-# TODO - we'd like to actually test everything, but the process library has a deadlock right now
-jdk:
-  - openjdk6
-#  - oraclejdk7
-
 env:
+  global:
+    - TRAVIS_JDK=zulu@1.6.107
+    - JABBA_HOME=/home/travis/.jabba
   matrix:
     - SCRIPTED_TEST="; mimaReportBinaryIssues; test; proguard"
+
+before_install:
+  - curl -sL https://raw.githubusercontent.com/shyiko/jabba/0.10.1/install.sh | bash && . ~/.jabba/jabba.sh
+
+install:
+  - $JABBA_HOME/bin/jabba install $TRAVIS_JDK && export JAVA_HOME="$JABBA_HOME/jdk/$TRAVIS_JDK" && export PATH="$JAVA_HOME/bin:$PATH" && java -Xmx32m -version
 
 # Undo _JAVA_OPTIONS environment variable
 before_script:
@@ -29,6 +24,11 @@ before_script:
 script:
   - sbt -J-XX:ReservedCodeCacheSize=128m "$SCRIPTED_TEST"
 
-  # Tricks to avoid unnecessary cache updates
-  - find $HOME/.sbt -name "*.lock" | xargs rm
-  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+before_cache:
+  - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
+  - find $HOME/.sbt  -name "*.lock"               -delete
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot
