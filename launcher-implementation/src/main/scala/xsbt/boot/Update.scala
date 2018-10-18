@@ -17,8 +17,8 @@ import core.module.id.{ ArtifactId, ModuleId, ModuleRevisionId }
 import core.module.descriptor.{ Configuration => IvyConfiguration, DefaultDependencyArtifactDescriptor, DefaultDependencyDescriptor, DefaultModuleDescriptor, ModuleDescriptor }
 import core.module.descriptor.{ Artifact => IArtifact, DefaultExcludeRule, DependencyDescriptor, ExcludeRule }
 import core.report.ResolveReport
-import core.resolve.{ ResolveEngine, ResolveOptions }
-import core.retrieve.{ RetrieveEngine, RetrieveOptions }
+import core.resolve.ResolveOptions
+import core.retrieve.RetrieveOptions
 import core.sort.SortEngine
 import core.settings.IvySettings
 import plugins.matcher.{ ExactPatternMatcher, PatternMatcher }
@@ -199,7 +199,7 @@ final class Update(config: UpdateConfiguration) {
       // this reduces the substantial logging done by Ivy, including the progress dots when downloading artifacts
       resolveOptions.setLog(LogOptions.LOG_DOWNLOAD_ONLY)
       resolveOptions.setCheckIfChanged(false)
-      val resolveEngine = new ResolveEngine(settings, eventManager, new SortEngine(settings))
+      val resolveEngine = new ParallelResolveEngine(settings, eventManager, new SortEngine(settings))
       val resolveReport = resolveEngine.resolve(module, resolveOptions)
       if (resolveReport.hasError) {
         logExceptions(resolveReport)
@@ -236,7 +236,7 @@ final class Update(config: UpdateConfiguration) {
   /** Retrieves resolved dependencies using the given target to determine the location to retrieve to. */
   private def retrieve(eventManager: EventManager, module: ModuleDescriptor, target: UpdateTarget, autoScalaVersion: Option[String]) {
     val retrieveOptions = new RetrieveOptions
-    val retrieveEngine = new RetrieveEngine(settings, eventManager)
+    val retrieveEngine = new ParallelRetrieveEngine(settings, eventManager)
     val (pattern, extraFilter) =
       target match {
         case _: UpdateScala => (scalaRetrievePattern, const(true))
