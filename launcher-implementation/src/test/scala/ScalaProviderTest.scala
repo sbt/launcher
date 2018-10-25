@@ -87,7 +87,7 @@ object ScalaProviderTest extends Specification {
 }
 object LaunchTest {
   def testApp(main: String): Application = testApp(main, Array[File]())
-  def testApp(main: String, extra: Array[File]): Application = Application("org.scala-sbt", "launch-test", new Explicit(AppVersion), main, Nil, CrossValue.Disabled, extra)
+  def testApp(main: String, extra: Array[File]): Application = Application("org.scala-sbt", new Explicit("launch-test"), new Explicit(AppVersion), main, Nil, CrossValue.Disabled, extra)
   import Predefined._
   def testRepositories = List(Local, MavenCentral, SonatypeOSSSnapshots).map(Repository.Predefined(_))
   def withLauncher[T](f: xsbti.Launcher => T): T =
