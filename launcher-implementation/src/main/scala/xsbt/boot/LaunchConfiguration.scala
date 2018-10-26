@@ -76,11 +76,11 @@ object LaunchCrossVersion {
 }
 
 final case class Application(groupID: String, name: Value[String], version: Value[String], main: String, components: List[String], crossVersioned: xsbti.CrossValue, classpathExtra: Array[File]) {
-  def getApp = Value.get(name)
+  def getName = Value.get(name)
   def withName(newName: Value[String]) = Application(groupID, newName, version, main, components, crossVersioned, classpathExtra)
   def getVersion = Value.get(version)
   def withVersion(newVersion: Value[String]) = Application(groupID, name, newVersion, main, components, crossVersioned, classpathExtra)
-  def toID = AppID(groupID, getApp, getVersion, main, toArray(components), crossVersioned, classpathExtra)
+  def toID = AppID(groupID, getName, getVersion, main, toArray(components), crossVersioned, classpathExtra)
   def map(f: File => File) = Application(groupID, name, version, main, components, crossVersioned, classpathExtra.map(f))
 }
 final case class AppID(groupID: String, name: String, version: String, mainClass: String, mainComponents: Array[String], crossVersionedValue: xsbti.CrossValue, classpathExtra: Array[File]) extends xsbti.ApplicationID {

@@ -95,11 +95,14 @@ class ConfigurationParser {
     value.map(readValue[List[String]](label)) getOrElse new Explicit(Nil)
 
   def getVersion(m: LabelMap, label: String, defaultName: String): (Value[String], LabelMap) =
-    process(m, "version", processLabel(label, defaultName))
-  def getAppName(m: LabelMap, label: String, defaultName: String, defaultValue: String): (Value[String], LabelMap) =
-    process(m, "app", processLabel(label, defaultName, Some(defaultValue)))
-  def processLabel(label: String, defaultName: String, defaultValue: Option[String] = None)(value: Option[String]): Value[String] =
-    value.map(readValue[String](label)).getOrElse(new Implicit(defaultName, defaultValue))
+    process(m, "version", processVersion(label, defaultName))
+  def processVersion(label: String, defaultName: String)(value: Option[String]): Value[String] =
+    value.map(readValue[String](label)).getOrElse(new Implicit(defaultName, None))
+
+  def getName(m: LabelMap, label: String, defaultName: String, defaultValue: String): (Value[String], LabelMap) =
+    process(m, "name", processName(label, defaultName, defaultValue))
+  def processName(label: String, defaultName: String, defaultValue: String)(value: Option[String]): Value[String] =
+    value.map(readValue[String](label)).getOrElse(new Implicit(defaultName, Some(defaultValue)))
 
   def readValue[T](label: String)(implicit read: String => T): String => Value[T] = value0 =>
     {
@@ -167,14 +170,14 @@ class ConfigurationParser {
     {
       val (org, m1) = id(m, "org", BootConfiguration.SbtOrg)
       val (name, m2) = id(m1, "name", "sbt")
-      val (appName, m3) = getAppName(m2, name + " app", name + ".app", name)
-      val (rev, m4) = getVersion(m3, name + " version", name + ".version")
-      val (main, m5) = id(m4, "class", "xsbt.Main")
-      val (components, m6) = ids(m5, "components", List("default"))
-      val (crossVersioned, m7) = id(m6, "cross-versioned", CrossVersionUtil.binaryString)
-      val (resources, m8) = ids(m7, "resources", Nil)
-      val (classifiers, m9) = getClassifiers(m8, "Application classifiers")
-      check(m9, "label")
+      val (appName, _) = getName(m1, name + " name", name + ".name", name)
+      val (rev, m3) = getVersion(m2, name + " version", name + ".version")
+      val (main, m4) = id(m3, "class", "xsbt.Main")
+      val (components, m5) = ids(m4, "components", List("default"))
+      val (crossVersioned, m6) = id(m5, "cross-versioned", CrossVersionUtil.binaryString)
+      val (resources, m7) = ids(m6, "resources", Nil)
+      val (classifiers, m8) = getClassifiers(m7, "Application classifiers")
+      check(m8, "label")
       val classpathExtra = toArray(toFiles(resources))
       val app = new Application(org, appName, rev, main, components, LaunchCrossVersion(crossVersioned), classpathExtra)
       (app, classifiers)

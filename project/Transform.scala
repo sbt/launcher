@@ -68,7 +68,7 @@ object Transform {
       Map(
         "org" -> organization.value,
         "sbt.version" -> version.value,
-        "sbt.app" -> name.value,
+        "sbt.name" -> name.value,
         "scala.version" -> scalaVersion.value,
         "repositories" -> repositories(isSnapshot.value).mkString(IO.Newline)
       )

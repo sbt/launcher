@@ -76,7 +76,6 @@ object Configuration {
   def DefaultVersionPart = "Default"
   def DefaultBuildProperties = "project/build.properties"
   def SbtVersionProperty = "sbt.version"
-  def SbtAppProperty = "sbt.app"
   val ConfigurationName = "sbt.boot.properties"
   val JarBasePath = "/sbt/"
   def userConfigurationPath = "/" + ConfigurationName
