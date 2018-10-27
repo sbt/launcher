@@ -94,9 +94,15 @@ class ConfigurationParser {
   def processClassifiers(label: String)(value: Option[String]): Value[List[String]] =
     value.map(readValue[List[String]](label)) getOrElse new Explicit(Nil)
 
-  def getVersion(m: LabelMap, label: String, defaultName: String): (Value[String], LabelMap) = process(m, "version", processVersion(label, defaultName))
+  def getVersion(m: LabelMap, label: String, defaultName: String): (Value[String], LabelMap) =
+    process(m, "version", processVersion(label, defaultName))
   def processVersion(label: String, defaultName: String)(value: Option[String]): Value[String] =
     value.map(readValue[String](label)).getOrElse(new Implicit(defaultName, None))
+
+  def getName(m: LabelMap, label: String, defaultName: String, defaultValue: String): (Value[String], LabelMap) =
+    process(m, "name", processName(label, defaultName, defaultValue))
+  def processName(label: String, defaultName: String, defaultValue: String)(value: Option[String]): Value[String] =
+    value.map(readValue[String](label)).getOrElse(new Implicit(defaultName, Some(defaultValue)))
 
   def readValue[T](label: String)(implicit read: String => T): String => Value[T] = value0 =>
     {
@@ -164,6 +170,7 @@ class ConfigurationParser {
     {
       val (org, m1) = id(m, "org", BootConfiguration.SbtOrg)
       val (name, m2) = id(m1, "name", "sbt")
+      val (appName, _) = getName(m1, name + " name", name + ".name", name)
       val (rev, m3) = getVersion(m2, name + " version", name + ".version")
       val (main, m4) = id(m3, "class", "xsbt.Main")
       val (components, m5) = ids(m4, "components", List("default"))
@@ -172,7 +179,7 @@ class ConfigurationParser {
       val (classifiers, m8) = getClassifiers(m7, "Application classifiers")
       check(m8, "label")
       val classpathExtra = toArray(toFiles(resources))
-      val app = new Application(org, name, rev, main, components, LaunchCrossVersion(crossVersioned), classpathExtra)
+      val app = new Application(org, appName, rev, main, components, LaunchCrossVersion(crossVersioned), classpathExtra)
       (app, classifiers)
     }
   def getServer(m: LabelMap): (Option[ServerConfiguration]) =

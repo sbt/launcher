@@ -20,8 +20,8 @@ final case class LaunchConfiguration(scalaVersion: Value[String], ivyConfigurati
   def withApp(app: Application) = LaunchConfiguration(scalaVersion, ivyConfiguration, app, boot, logging, appProperties, serverConfig)
   def withAppVersion(newAppVersion: String) = LaunchConfiguration(scalaVersion, ivyConfiguration, app.withVersion(new Explicit(newAppVersion)), boot, logging, appProperties, serverConfig)
   // TODO: withExplicit
-  def withVersions(newScalaVersion: String, newAppVersion: String, classifiers0: Classifiers) =
-    LaunchConfiguration(new Explicit(newScalaVersion), ivyConfiguration.copy(classifiers = classifiers0), app.withVersion(new Explicit(newAppVersion)), boot, logging, appProperties, serverConfig)
+  def withNameAndVersions(newScalaVersion: String, newAppVersion: String, newAppName: String, classifiers0: Classifiers) =
+    LaunchConfiguration(new Explicit(newScalaVersion), ivyConfiguration.copy(classifiers = classifiers0), app.withVersion(new Explicit(newAppVersion)).withName(new Explicit(newAppName)), boot, logging, appProperties, serverConfig)
 
   def map(f: File => File) = LaunchConfiguration(scalaVersion, ivyConfiguration.map(f), app.map(f), boot.map(f), logging, appProperties, serverConfig.map(_ map f))
 }
@@ -75,10 +75,12 @@ object LaunchCrossVersion {
     }
 }
 
-final case class Application(groupID: String, name: String, version: Value[String], main: String, components: List[String], crossVersioned: xsbti.CrossValue, classpathExtra: Array[File]) {
+final case class Application(groupID: String, name: Value[String], version: Value[String], main: String, components: List[String], crossVersioned: xsbti.CrossValue, classpathExtra: Array[File]) {
+  def getName = Value.get(name)
+  def withName(newName: Value[String]) = Application(groupID, newName, version, main, components, crossVersioned, classpathExtra)
   def getVersion = Value.get(version)
   def withVersion(newVersion: Value[String]) = Application(groupID, name, newVersion, main, components, crossVersioned, classpathExtra)
-  def toID = AppID(groupID, name, getVersion, main, toArray(components), crossVersioned, classpathExtra)
+  def toID = AppID(groupID, getName, getVersion, main, toArray(components), crossVersioned, classpathExtra)
   def map(f: File => File) = Application(groupID, name, version, main, components, crossVersioned, classpathExtra.map(f))
 }
 final case class AppID(groupID: String, name: String, version: String, mainClass: String, mainComponents: Array[String], crossVersionedValue: xsbti.CrossValue, classpathExtra: Array[File]) extends xsbti.ApplicationID {
@@ -89,7 +91,7 @@ object Application {
   def apply(id: xsbti.ApplicationID): Application =
     {
       import id._
-      Application(groupID, name, new Explicit(version), mainClass, mainComponents.toList, safeCrossVersionedValue(id), classpathExtra)
+      Application(groupID, new Explicit(name), new Explicit(version), mainClass, mainComponents.toList, safeCrossVersionedValue(id), classpathExtra)
     }
 
   private def safeCrossVersionedValue(id: xsbti.ApplicationID): xsbti.CrossValue =

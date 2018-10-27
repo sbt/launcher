@@ -22,8 +22,9 @@ final class ResolveValues(conf: LaunchConfiguration) {
       import conf._
       val scalaVersion = resolve(conf.scalaVersion)
       val appVersion = resolve(app.version)
+      val appName = resolve(app.name)
       val classifiers = resolveClassifiers(ivyConfiguration.classifiers)
-      withVersions(scalaVersion, appVersion, classifiers)
+      withNameAndVersions(scalaVersion, appVersion, appName, classifiers)
     }
   def resolveClassifiers(classifiers: Classifiers): Classifiers =
     {

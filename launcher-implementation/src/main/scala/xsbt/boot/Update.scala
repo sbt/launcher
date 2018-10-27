@@ -136,9 +136,9 @@ final class Update(config: UpdateConfiguration) {
         case u: UpdateApp =>
           val app = u.id
           val resolvedName = (app.crossVersioned, scalaVersion) match {
-            case (xsbti.CrossValue.Full, Some(sv))   => app.name + "_" + sv
-            case (xsbti.CrossValue.Binary, Some(sv)) => app.name + "_" + CrossVersionUtil.binaryScalaVersion(sv)
-            case _                                   => app.name
+            case (xsbti.CrossValue.Full, Some(sv))   => app.getName + "_" + sv
+            case (xsbti.CrossValue.Binary, Some(sv)) => app.getName + "_" + CrossVersionUtil.binaryScalaVersion(sv)
+            case _                                   => app.getName
           }
           val ddesc = addDependency(moduleID, app.groupID, resolvedName, app.getVersion, "default(compile)", u.classifiers)
           System.err.println("Getting " + app.groupID + " " + resolvedName + " " + app.getVersion + " " + reason + " (this may take some time)...")
