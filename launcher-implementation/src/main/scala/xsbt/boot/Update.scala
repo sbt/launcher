@@ -56,7 +56,7 @@ final class Update(config: UpdateConfiguration) {
     val optionProps =
       Option(System.getProperty("sbt.boot.credentials")) orElse
         Option(System.getenv("SBT_CREDENTIALS")) map (path =>
-          Pre.readProperties(fileFromPath(path)))
+          Pre.readProperties(new File(substituteTilde(path))))
     optionProps match {
       case Some(props) => extractCredentials("realm", "host", "user", "password")(props)
       case None        => ()

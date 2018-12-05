@@ -20,6 +20,15 @@ object PreTest extends Properties("Pre") {
   property("toArray") = Prop.forAll((list: List[String]) => objArrEquals(list.toArray, toArray(list)))
   property("concat") = Prop.forAll(genFiles, genFiles) { (a: Array[File], b: Array[File]) => (a ++ b) sameElements concat(a, b) }
   property("array") = Prop.forAll(genFiles) { (a: Array[File]) => array(a.toList: _*) sameElements Array(a: _*) }
+  property("substituteTilde") = {
+    val userHome = System.getProperty("user.home")
+    assert(substituteTilde("~/path") == s"$userHome/path")
+    assert(substituteTilde("~\\") == s"$userHome\\")
+    assert(substituteTilde("~") == userHome)
+    assert(substituteTilde("~x") == "~x")
+    assert(substituteTilde("x~/") == "x~/")
+    true
+  }
 
   implicit lazy val arbFile: Arbitrary[File] = Arbitrary { for (i <- Arbitrary.arbitrary[Int]) yield new File(i.toString) }
   implicit lazy val genFiles: Gen[Array[File]] = Arbitrary.arbitrary[Array[File]]
