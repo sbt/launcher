@@ -81,6 +81,8 @@ object Pre {
   final val isWindows: Boolean = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")
   final val isCygwin: Boolean = isWindows && java.lang.Boolean.getBoolean("sbt.cygwin")
 
+  private[boot] def fileFromPath(path: String): File =  new File(path.replaceFirst("^~", System.getProperty("user.home")))
+
   import java.util.Properties
   import java.io.{ FileInputStream, FileOutputStream }
   private[boot] def readProperties(propertiesFile: File) =
