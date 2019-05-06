@@ -120,7 +120,7 @@ object LaunchProguard {
     f(Set(inJar, configFile)) // make the assumption that if the classpath changed, the outputJar would change
     outputJar
   }
-  def runProguard(outputJar: File, configFile: File, cp: Seq[File], log: Logger) {
+  def runProguard(outputJar: File, configFile: File, cp: Seq[File], log: Logger): Unit = {
     IO.delete(outputJar)
     val fileString = mkpath(configFile.getAbsolutePath, '\'')
     val exitValue = Process("java", List("-Xmx256M", "-cp", Path.makeString(cp), "proguard.ProGuard", "-include " + fileString)) ! log

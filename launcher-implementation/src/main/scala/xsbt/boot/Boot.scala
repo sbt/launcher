@@ -7,7 +7,7 @@ import java.io.File
 
 // The entry point to the launcher
 object Boot {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     standBy()
     val config = parseArgs(args)
     // If we havne't exited, we set up some hooks and launch

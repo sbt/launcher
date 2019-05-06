@@ -37,7 +37,7 @@ object Configuration {
         val url = if (propertyConfigured == null) configurationOnClasspath else configurationFromFile(propertyConfigured, baseDirectory)
         (url, args, PropertiesFile)
     }
-  def setProperty(head: String) {
+  def setProperty(head: String): Unit = {
     head.split("=", 2) match {
       case Array("")         => System.err.println(s"Warning: invalid system property '$head'")
       case Array(key)        => sys.props += key -> ""

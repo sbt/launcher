@@ -12,7 +12,7 @@ object Initialize {
   lazy val selectCreate = (_: AppProperty).create
   lazy val selectQuick = (_: AppProperty).quick
   lazy val selectFill = (_: AppProperty).fill
-  def create(file: File, promptCreate: String, enableQuick: Boolean, spec: List[AppProperty]) {
+  def create(file: File, promptCreate: String, enableQuick: Boolean, spec: List[AppProperty]): Unit = {
     readLine(promptCreate + " (y/N" + (if (enableQuick) "/s" else "") + ") ") match {
       case None => declined("")
       case Some(line) =>
@@ -27,13 +27,13 @@ object Initialize {
     }
   }
   def fill(file: File, spec: List[AppProperty]): Unit = process(file, spec, selectFill)
-  def process(file: File, appProperties: List[AppProperty], select: AppProperty => Option[PropertyInit]) {
+  def process(file: File, appProperties: List[AppProperty], select: AppProperty => Option[PropertyInit]): Unit = {
     val properties = readProperties(file)
     val uninitialized =
       for (property <- appProperties; init <- select(property) if properties.getProperty(property.name) == null) yield initialize(properties, property.name, init)
     if (!uninitialized.isEmpty) writeProperties(properties, file, "")
   }
-  def initialize(properties: Properties, name: String, init: PropertyInit) {
+  def initialize(properties: Properties, name: String, init: PropertyInit): Unit = {
     init match {
       case set: SetProperty => properties.setProperty(name, set.value)
       case prompt: PromptProperty =>
