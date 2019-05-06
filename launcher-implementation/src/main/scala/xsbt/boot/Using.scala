@@ -26,9 +26,9 @@ object Copy {
       }
       missing
     }
-  def transfer(in: InputStream, out: OutputStream) {
+  def transfer(in: InputStream, out: OutputStream): Unit = {
     val buffer = new Array[Byte](8192)
-    def next() {
+    def next(): Unit = {
       val read = in.read(buffer)
       if (read > 0) {
         out.write(buffer, 0, read)

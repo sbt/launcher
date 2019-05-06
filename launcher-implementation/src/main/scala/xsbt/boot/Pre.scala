@@ -71,7 +71,7 @@ object Pre {
     try { new File(url.toURI) }
     catch { case _: java.net.URISyntaxException => new File(url.getPath) }
 
-  def delete(f: File) {
+  def delete(f: File): Unit = {
     if (f.isDirectory) {
       val fs = f.listFiles()
       if (fs ne null) fs foreach delete

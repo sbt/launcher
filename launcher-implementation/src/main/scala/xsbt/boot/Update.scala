@@ -52,7 +52,7 @@ final class Update(config: UpdateConfiguration) {
   private def logFile = new File(bootDirectory, UpdateLogName)
   private val logWriter = new PrintWriter(new FileWriter(logFile))
 
-  private def addCredentials() {
+  private def addCredentials(): Unit = {
     val optionProps =
       Option(System.getProperty("sbt.boot.credentials")) orElse
         Option(System.getenv("SBT_CREDENTIALS")) map (path =>
@@ -63,7 +63,7 @@ final class Update(config: UpdateConfiguration) {
     }
     extractCredentials("sbt.boot.realm", "sbt.boot.host", "sbt.boot.user", "sbt.boot.password")(System.getProperties)
   }
-  private def extractCredentials(keys: (String, String, String, String))(props: Properties) {
+  private def extractCredentials(keys: (String, String, String, String))(props: Properties): Unit = {
     val List(realm, host, user, password) = keys.productIterator.map(key => props.getProperty(key.toString)).toList
     if (realm != null && host != null && user != null && password != null)
       CredentialsStore.INSTANCE.addCredentials(realm, host, user, password)
@@ -175,7 +175,7 @@ final class Update(config: UpdateConfiguration) {
       moduleID.addDependency(dep)
       dep
     }
-  private def addClassifier(dep: DefaultDependencyDescriptor, name: String, classifier: String) {
+  private def addClassifier(dep: DefaultDependencyDescriptor, name: String, classifier: String): Unit = {
     val extraMap = new java.util.HashMap[String, String]
     if (!isEmpty(classifier))
       extraMap.put("e:classifier", classifier)
@@ -223,7 +223,7 @@ final class Update(config: UpdateConfiguration) {
     }
 
   /** Exceptions are logged to the update log file. */
-  private def logExceptions(report: ResolveReport) {
+  private def logExceptions(report: ResolveReport): Unit = {
     for (unresolved <- report.getUnresolvedDependencies) {
       val problem = unresolved.getProblem
       if (problem != null)
@@ -234,7 +234,7 @@ final class Update(config: UpdateConfiguration) {
     def accept(o: Any) = o match { case a: IArtifact => f(a); case _ => false }
   }
   /** Retrieves resolved dependencies using the given target to determine the location to retrieve to. */
-  private def retrieve(eventManager: EventManager, module: ModuleDescriptor, target: UpdateTarget, autoScalaVersion: Option[String]) {
+  private def retrieve(eventManager: EventManager, module: ModuleDescriptor, target: UpdateTarget, autoScalaVersion: Option[String]): Unit = {
     val retrieveOptions = new RetrieveOptions
     val retrieveEngine = new ParallelRetrieveEngine(settings, eventManager)
     val (pattern, extraFilter) =
@@ -254,7 +254,7 @@ final class Update(config: UpdateConfiguration) {
   }
   private def retrieveType(tpe: String): Boolean = tpe == "jar" || tpe == "bundle"
   /** Add the Sonatype OSS repositories */
-  private def addResolvers(settings: IvySettings) {
+  private def addResolvers(settings: IvySettings): Unit = {
     val newDefault = new ChainResolver {
       override def locate(artifact: IArtifact) =
         if (hasImplicitClassifier(artifact)) null else super.locate(artifact)
@@ -279,21 +279,21 @@ final class Update(config: UpdateConfiguration) {
   private[this] val Snapshot = "-SNAPSHOT"
   private[this] val ChangingPattern = ".*" + Snapshot
   private[this] val ChangingMatcher = PatternMatcher.REGEXP
-  private[this] def configureCache(settings: IvySettings) {
+  private[this] def configureCache(settings: IvySettings): Unit = {
     configureResolutionCache(settings)
     configureRepositoryCache(settings)
   }
-  private[this] def configureResolutionCache(settings: IvySettings) {
+  private[this] def configureResolutionCache(settings: IvySettings): Unit = {
     resolutionCacheBase.mkdirs()
     val drcm = new DefaultResolutionCacheManager(resolutionCacheBase)
     drcm.setSettings(settings)
     settings.setResolutionCacheManager(drcm)
   }
-  private[this] def configureRepositoryCache(settings: IvySettings) {
+  private[this] def configureRepositoryCache(settings: IvySettings): Unit = {
     val cacheDir = settings.getDefaultRepositoryCacheBasedir()
     val manager = new DefaultRepositoryCacheManager("default-cache", settings, cacheDir) {
       // ignore resolvers wherever possible- not ideal, but avoids issues like #704
-      override def saveResolvers(descriptor: ModuleDescriptor, metadataResolverName: String, artifactResolverName: String) {}
+      override def saveResolvers(descriptor: ModuleDescriptor, metadataResolverName: String, artifactResolverName: String): Unit = {}
       override def findModuleInCache(dd: DependencyDescriptor, revId: ModuleRevisionId, options: CacheMetadataOptions, r: String) = {
         super.findModuleInCache(dd, revId, options, null)
       }
@@ -334,7 +334,7 @@ final class Update(config: UpdateConfiguration) {
           }
       }
     }
-  private def onDefaultRepositoryCacheManager(settings: IvySettings)(f: DefaultRepositoryCacheManager => Unit) {
+  private def onDefaultRepositoryCacheManager(settings: IvySettings)(f: DefaultRepositoryCacheManager => Unit): Unit = {
     settings.getDefaultRepositoryCacheManager match {
       case manager: DefaultRepositoryCacheManager => f(manager)
       case _                                      => ()
@@ -423,7 +423,7 @@ private final class SbtIvyLogger(logWriter: PrintWriter) extends DefaultMessageL
       if (level <= getLevel && acceptMessage(msg))
         System.out.println(msg)
     }
-  override def rawlog(msg: String, level: Int) { log(msg, level) }
+  override def rawlog(msg: String, level: Int): Unit = { log(msg, level) }
   /** This is a hack to filter error messages about 'unknown resolver ...'. */
   override def error(msg: String) = if (acceptError(msg)) super.error(msg)
 }
