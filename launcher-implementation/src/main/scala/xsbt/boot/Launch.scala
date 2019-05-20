@@ -8,6 +8,8 @@ import BootConfiguration.{ CompilerModuleName, JAnsiVersion, LibraryModuleName }
 import java.io.File
 import java.net.{ URL, URLClassLoader, URI }
 import java.util.concurrent.Callable
+import java.util.concurrent.atomic.AtomicReference
+
 import scala.collection.immutable.List
 import scala.annotation.tailrec
 import ConfigurationStorageState._
@@ -138,7 +140,6 @@ import BootConfiguration.{ appDirectoryName, baseDirectoryName, extractScalaVers
 class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val ivyOptions: IvyOptions) extends xsbti.Launcher {
   import ivyOptions.{ checksums => checksumsList, classifiers, repositories }
   bootDirectory.mkdirs
-  private val scalaProviders = new Cache[(String, String), String, xsbti.ScalaProvider]((x, y) => getScalaProvider(x._1, x._2, y))
   def getScala(version: String): xsbti.ScalaProvider = getScala(version, "")
   def getScala(version: String, reason: String): xsbti.ScalaProvider = getScala(version, reason, ScalaOrg)
   def getScala(version: String, reason: String, scalaOrg: String) = scalaProviders((scalaOrg, version), reason)
@@ -147,7 +148,10 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
     getAppProvider(id, scalaVersion, false)
 
   val bootLoader = new BootFilteredLoader(getClass.getClassLoader)
-  val topLoader = if (isWindows && !isCygwin) jansiLoader(bootLoader) else bootLoader
+  private[this] val initLoader = if (isWindows && !isCygwin) jansiLoader(bootLoader) else bootLoader
+  private[this] val scalaProviderClassLoader = new AtomicReference(initLoader)
+  def topLoader: ClassLoader = scalaProviderClassLoader.get()
+  private val scalaProviders = new Cache[(String, String), String, xsbti.ScalaProvider]((x, y) => getScalaProvider(x._1, x._2, y, scalaProviderClassLoader.get))
 
   val updateLockFile = if (lockBoot) Some(new File(bootDirectory, "sbt.boot.lock")) else None
 
@@ -215,6 +219,10 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
         else
           existing(app, ScalaOrg, explicitScalaVersion, baseDirs(None)) getOrElse retrieve()
 
+      case class TestInterfaceLoader(jar: File, parent: ClassLoader) extends URLClassLoader(Array(jar.toURI.toURL), topLoader)
+      retrievedApp.fullClasspath.find(_.toString.endsWith("test-interface-1.0.jar")) foreach { f =>
+        scalaProviderClassLoader.set(TestInterfaceLoader(f, initLoader))
+      }
       val scalaVersion = getOrError(strictOr(explicitScalaVersion, retrievedApp.detectedScalaVersion), "No Scala version specified or detected")
       val scalaProvider = getScala(scalaVersion, "(for " + id.name + ")")
       val resolvedId = resolveId(retrievedApp.resolvedAppVersion, id)
@@ -236,16 +244,16 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
       (missing, p)
     }
   private[this] def locked[T](c: Callable[T]): T = Locks(orNull(updateLockFile), c)
-  def getScalaProvider(scalaOrg: String, scalaVersion: String, reason: String): xsbti.ScalaProvider =
-    locked(new Callable[xsbti.ScalaProvider] { def call = getScalaProvider0(scalaOrg, scalaVersion, reason) })
+  def getScalaProvider(scalaOrg: String, scalaVersion: String, reason: String, classLoader: ClassLoader): xsbti.ScalaProvider =
+    locked(new Callable[xsbti.ScalaProvider] { def call = getScalaProvider0(scalaOrg, scalaVersion, reason, classLoader) })
 
-  private[this] final def getScalaProvider0(scalaOrg: String, scalaVersion: String, reason: String) =
+  private[this] final def getScalaProvider0(scalaOrg: String, scalaVersion: String, reason: String, classLoader: ClassLoader) =
     {
       val scalaM = scalaModule(scalaOrg, scalaVersion)
       val (scalaHome, lib) = scalaDirs(scalaM, scalaOrg, scalaVersion)
       val baseDirs = lib :: Nil
       def provider(retrieved: RetrievedModule): xsbti.ScalaProvider = {
-        val p = scalaProvider(scalaVersion, retrieved, topLoader, lib)
+        val p = scalaProvider(scalaVersion, retrieved, classLoader, lib)
         checkLoader(p.loader, retrieved.definition, TestLoadScalaClasses, p)
       }
       existing(scalaM, scalaOrg, Some(scalaVersion), _ => baseDirs) flatMap { mod =>
