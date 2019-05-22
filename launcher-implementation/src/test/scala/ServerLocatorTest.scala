@@ -48,19 +48,5 @@ object ServerLocatorTest extends Specification {
       finally inputStream.close()
       result must equalTo(Some(expected))
     }
-    "leave user-specified memory options alone" in {
-      withTemporaryDirectory { dir =>
-        val args = ServerLauncher.serverJvmArgs(dir, List("-Xmx4321m"))
-        args must contain(beEqualTo("-Xmx4321m"))
-        args must not contain (beEqualTo("-Xms256m"))
-        args must not contain (beEqualTo("-Xmx1024m"))
-      }
-    }
-    "ignore whitespace in jvm args file" in {
-      withTemporaryDirectory { dir =>
-        val args = ServerLauncher.serverJvmArgs(dir, List("", "   ", "  -Xmx4321m  ", "  ", ""))
-        args must equalTo(List("-Xmx4321m"))
-      }
-    }
   }
 }
