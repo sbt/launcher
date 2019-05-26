@@ -6,7 +6,7 @@ language: scala
 
 env:
   global:
-    - TRAVIS_JDK=zulu@1.6.107
+    - TRAVIS_JDK=zulu@1.7.222
     - JABBA_HOME=/home/travis/.jabba
   matrix:
     - SCRIPTED_TEST="; mimaReportBinaryIssues; test; proguard"
