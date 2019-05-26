@@ -18,7 +18,7 @@ object Release {
     // we use externally are *optional* dependencies.
     pomIncludeRepository := { x => false },
     homepage := Some(url("http://scala-sbt.org")),
-    licenses += "BSD" -> new java.net.URL("http://opensource.org/licenses/BSD-2-Clause"),
+    licenses += "Apache-2.0" -> new java.net.URL("https://www.apache.org/licenses/LICENSE-2.0.txt"),
     scmInfo := Some(ScmInfo(
       browseUrl = new java.net.URL("http://github.com/sbt/launcher"),
       connection = "scm:git@github.com:sbt/launcher.git"
