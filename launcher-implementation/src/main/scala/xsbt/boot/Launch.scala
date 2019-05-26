@@ -220,7 +220,8 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
           existing(app, ScalaOrg, explicitScalaVersion, baseDirs(None)) getOrElse retrieve()
 
       case class TestInterfaceLoader(jar: File, parent: ClassLoader) extends URLClassLoader(Array(jar.toURI.toURL), topLoader)
-      retrievedApp.fullClasspath.find(_.toString.endsWith("test-interface-1.0.jar")) foreach { f =>
+      val testInterface = java.util.regex.Pattern.compile("test-interface-[0-9.]+\\.jar")
+      retrievedApp.fullClasspath.find(f => testInterface.matcher(f.getName).find()).foreach { f =>
         scalaProviderClassLoader.set(TestInterfaceLoader(f, initLoader))
       }
       val scalaVersion = getOrError(strictOr(explicitScalaVersion, retrievedApp.detectedScalaVersion), "No Scala version specified or detected")
