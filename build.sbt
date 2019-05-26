@@ -2,6 +2,8 @@ import Deps._
 import Util._
 import com.typesafe.tools.mima.core._, ProblemFilters._
 
+version in ThisBuild := "1.1.1-SNAPSHOT"
+
 // the launcher is published with metadata so that the scripted plugin can pull it in
 // being proguarded, it shouldn't ever be on a classpath with other jars, however
 def proguardedLauncherSettings = Seq(
@@ -62,7 +64,6 @@ lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")
 
 def sbtBuildSettings = Seq(
   bintrayPackage := "launcher",
-  version := "1.1.0-SNAPSHOT",
   publishArtifact in packageDoc := true,
   scalaVersion := "2.10.7",
   publishMavenStyle := true,
