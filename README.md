@@ -1,13 +1,11 @@
-# sbt launcher module
+# The sbt launcher module
 
 This project is the componetized sbt launcher.   It can be used to launch many Maven/Ivy deployed applications
-and utilities, and forms the basis of [sbt](https://github.com/sbt/sbt),
-[activator](https://github.com/typesafehub/activator) and [conscript](https://github.com/foundweekends/conscript)'s launching
+and utilities, and forms the basis of [sbt](https://github.com/sbt/sbt)
+and [conscript](https://github.com/foundweekends/conscript)'s launching
 abilities.
 
-For the full set of documentation, read: http://www.scala-sbt.org/0.13/docs/Sbt-Launcher.html
-.
-
+For the full set of documentation, read: <https://www.scala-sbt.org/1.x/docs/Sbt-Launcher.html>.
 
 ## Rebundling
 
@@ -23,7 +21,7 @@ This minimal JAR file is designed to be:
 * Isolate classloaders and allow re-use of Scala library classloader for Scala applications.
 * Rebundled as a "wrapper" or "launcher" for your specific project.
 
-To rebundle the JAR for your project, first you'll need a launcher properties file (specified [here](http://www.scala-sbt.org/0.13/docs/Launcher-Configuration.html)).
+To rebundle the JAR for your project, first you'll need a launcher properties file (specified [here](https://www.scala-sbt.org/1.x/docs/Launcher-Configuration.html)).
 
 You can test your launch configuration file by running:
 
@@ -57,4 +55,3 @@ Additionally, we recommend renaming your bundled launch jar for your application
 # License
 
 This software is under a modified BSD license.
-
