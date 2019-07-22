@@ -59,9 +59,9 @@ private[xsbt] class ParallelRetrieveEngine(
 
     val confs = getConfs(mrid, options)
     if (LogOptions.LOG_DEFAULT.equals(options.getLog())) {
-      Message.info("\tconfs: " + Arrays.asList(confs))
+      Message.info("\tconfs: " + Arrays.asList(confs: _*))
     } else {
-      Message.verbose("\tconfs: " + Arrays.asList(confs))
+      Message.verbose("\tconfs: " + Arrays.asList(confs: _*))
     }
     if (eventManager != null) {
       eventManager.fireIvyEvent(new StartRetrieveEvent(mrid, confs, options))
