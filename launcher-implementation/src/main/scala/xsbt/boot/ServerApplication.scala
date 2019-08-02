@@ -15,7 +15,7 @@ class ServerApplication private (provider: xsbti.AppProvider) extends xsbti.AppM
   override def run(configuration: xsbti.AppConfiguration): xsbti.MainResult = {
     val serverMain = provider.entryPoint.asSubclass(ServerMainClass).newInstance
     val server = serverMain.start(configuration)
-    System.out.println(s"${SERVER_SYNCH_TEXT}${server.uri}")
+    Console.err.println(s"${SERVER_SYNCH_TEXT}${server.uri}")
     server.awaitTermination()
   }
 }

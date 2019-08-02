@@ -28,7 +28,7 @@ object Launch {
     if (arguments.isLocate) {
       if (!newArgs2.isEmpty) {
         // TODO - Print the arguments without exploding proguard size.
-        System.err.println("[warn] --locate option ignores arguments")
+        Console.err.println("[warn] --locate option ignores arguments")
       }
       locate(currentDirectory, config)
     } else {
@@ -42,7 +42,7 @@ object Launch {
     config.serverConfig match {
       case Some(_) =>
         val uri = ServerLocator.locate(currentDirectory, config)
-        System.out.println(uri.toASCIIString)
+        Console.err.println(uri.toASCIIString)
         Some(0)
       case None => sys.error(s"${config.app.groupID}-${config.app.main} is not configured as a server.")
     }

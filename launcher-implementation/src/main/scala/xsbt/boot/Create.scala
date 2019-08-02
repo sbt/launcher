@@ -21,7 +21,7 @@ object Initialize {
           case "s"             => process(file, spec, selectQuick)
           case "n" | "no" | "" => declined("")
           case x =>
-            System.err.println("  '" + x + "' not understood.")
+            Console.err.println("  '" + x + "' not understood.")
             create(file, promptCreate, enableQuick, spec)
         }
     }
