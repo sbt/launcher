@@ -47,7 +47,7 @@ object ServerLocator {
   // Launch the process and read the port...
   def locate(currentDirectory: File, config: LaunchConfiguration): URI =
     config.serverConfig match {
-      case None => sys.error("No server lock file configured.  Cannot locate server.")
+      case None => sys.error("no server lock file configured. cannot locate server.")
       case Some(sc) => locked(makeLockFile(sc.lockFile)) {
         readProperties(sc.lockFile) match {
           case Some(uri) if isReachable(uri) => uri
@@ -130,7 +130,7 @@ object ServerLauncher {
   def startServer(currentDirectory: File, config: LaunchConfiguration): URI = {
     val serverConfig = config.serverConfig match {
       case Some(c) => c
-      case None    => throw new RuntimeException("Logic Failure:  Attempting to start a server that isn't configured to be a server.  Please report a bug.")
+      case None    => throw new RuntimeException("logic failure: attempting to start a server that isn't configured to be a server. please report a bug.")
     }
     val launchConfig = java.io.File.createTempFile("sbtlaunch", "config")
     if (System.getenv("SBT_SERVER_SAVE_TEMPS") eq null)
@@ -169,7 +169,7 @@ object ServerLauncher {
         try process.destroy() catch { case e: Exception => }
         // block a second to try to get stuff from stderr
         errorDumper.close(waitForErrors = true)
-        sys.error(s"Failed to start server process in ${pb.directory} command line ${pb.command}")
+        sys.error(s"failed to start server process in ${pb.directory} command line ${pb.command}")
     } finally {
       errorDumper.close(waitForErrors = false)
       stdout.close()
@@ -219,8 +219,8 @@ object ServerLauncher {
         source <- Option(domain.getCodeSource)
         location = source.getLocation
       } yield toFile(location)
-      fileOpt.getOrElse(throw new RuntimeException("Could not inspect protection domain or code source"))
+      fileOpt.getOrElse(throw new RuntimeException("could not inspect protection domain or code source"))
     } catch {
-      case e: Throwable => throw new RuntimeException("Unable to find sbt-launch.jar.", e)
+      case e: Throwable => throw new RuntimeException("unable to find sbt-launch.jar.", e)
     }
 }

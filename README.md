@@ -51,6 +51,11 @@ Error during sbt execution: Could not finder sbt launch configuration.  Searched
 Additionally, we recommend renaming your bundled launch jar for your application (e.g. activator calls theirs
 "activator-launch-<version>.jar").
 
+## building
+
+```
+sbt -J-XX:MaxPermSize=256M
+```
 
 # License
 

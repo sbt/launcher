@@ -29,7 +29,7 @@ class Find(config: LaunchConfiguration) {
                 case Nil         => Some(current)
                 case head :: Nil => Some(head)
                 case xs =>
-                  System.err.println("Search method is 'only' and multiple ancestor directories match:\n\t" + fromRoot.mkString("\n\t"))
+                  System.err.println("search method is 'only' and multiple ancestor directories match:\n\t" + fromRoot.mkString("\n\t"))
                   System.exit(1)
                   None
               }

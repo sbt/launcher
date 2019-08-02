@@ -21,11 +21,11 @@ object Pre {
   def isEmpty(line: String) = line.length == 0
   def isNonEmpty(line: String) = line.length > 0
   def assert(condition: Boolean, msg: => String): Unit = if (!condition) throw new AssertionError(msg)
-  def assert(condition: Boolean): Unit = assert(condition, "Assertion failed")
+  def assert(condition: Boolean): Unit = assert(condition, "assertion failed")
   def require(condition: Boolean, msg: => String): Unit = if (!condition) throw new IllegalArgumentException(msg)
   def error(msg: String): Nothing = throw new BootException(prefixError(msg))
   def declined(msg: String): Nothing = throw new BootException(msg)
-  def prefixError(msg: String): String = "Error during sbt execution: " + msg
+  def prefixError(msg: String): String = "error during sbt execution: " + msg
   def toBoolean(s: String) = java.lang.Boolean.parseBoolean(s)
   def toArray[T: ClassManifest](list: List[T]) =
     {

@@ -39,7 +39,7 @@ object Configuration {
     }
   def setProperty(head: String): Unit = {
     head.split("=", 2) match {
-      case Array("")         => System.err.println(s"Warning: invalid system property '$head'")
+      case Array("")         => System.err.println(s"[warn] invalid system property '$head'")
       case Array(key)        => sys.props += key -> ""
       case Array(key, value) => sys.props += key -> value
     }
@@ -48,7 +48,7 @@ object Configuration {
     {
       val paths = resourcePaths(guessSbtVersion)
       paths.iterator.map(getClass.getResource).find(neNull) getOrElse
-        (multiPartError("Could not finder sbt launch configuration.  Searched classpath for:", paths))
+        (multiPartError("could not find sbt launch configuration. searched classpath for:", paths))
     }
   def directConfiguration(path: String, baseDirectory: File): URL =
     {
@@ -67,7 +67,7 @@ object Configuration {
       val against = resolveAgainst(baseDirectory)
       // use Iterators so that resolution occurs lazily, for performance
       val resolving = against.iterator.flatMap(e => resolve(e).toList.iterator)
-      if (!resolving.hasNext) multiPartError("Could not find configuration file '" + path + "'.  Searched:", against)
+      if (!resolving.hasNext) multiPartError("could not find configuration file '" + path + "'. searched:", against)
       resolving.next()
     }
   def multiPartError[T](firstLine: String, lines: List[T]) = Pre.error((firstLine :: lines).mkString("\n\t"))
@@ -131,7 +131,7 @@ object Configuration {
   def classLocation(cl: Class[_]): URL =
     {
       val codeSource = cl.getProtectionDomain.getCodeSource
-      if (codeSource == null) Pre.error("No class location for " + cl)
+      if (codeSource == null) Pre.error("no class location for " + cl)
       else codeSource.getLocation
     }
   // single-arg constructor doesn't properly escape
