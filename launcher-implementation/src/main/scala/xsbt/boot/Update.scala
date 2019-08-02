@@ -366,10 +366,15 @@ final class Update(config: UpdateConfiguration) {
     }
   private def useSecureResolvers = sys.props.get("sbt.repository.secure") map { _.toLowerCase == "true" } getOrElse true
   private def centralRepositoryRoot(secure: Boolean) = {
-    (if (secure) "https" else "http") + "://repo1.maven.org/maven2/"
+    val value = (if (secure) "https" else "http") + "://repo1.maven.org/maven2/"
+    log(s"[warn] insecure HTTP request is deprecated '$value' via 'sbt.repository.secure'; switch to HTTPS")
+    log(s"[warn] Maven Central HTTP access is scheduled to end in January 2020")
+    value
   }
   private def jcenterRepositoryRoot(secure: Boolean) = {
-    (if (secure) "https" else "http") + "://jcenter.bintray.com/"
+    val value = (if (secure) "https" else "http") + "://jcenter.bintray.com/"
+    log(s"[warn] insecure HTTP request is deprecated '$value' via 'sbt.repository.secure'; switch to HTTPS")
+    value
   }
 
   /** Creates a resolver for Maven Central.*/
@@ -425,7 +430,7 @@ private final class SbtIvyLogger(logWriter: PrintWriter) extends DefaultMessageL
     else {
       logWriter.println(msg)
       if (level <= getLevel && acceptMessage(msg))
-        Console.out.println(msg)
+        Console.err.println(msg)
     }
   override def rawlog(msg: String, level: Int): Unit = { log(msg, level) }
   /** This is a hack to filter error messages about 'unknown resolver ...'. */

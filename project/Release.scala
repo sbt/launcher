@@ -17,10 +17,10 @@ object Release {
     // Maven central cannot allow other repos.  We're ok here because the artifacts we
     // we use externally are *optional* dependencies.
     pomIncludeRepository := { x => false },
-    homepage := Some(url("http://scala-sbt.org")),
-    licenses += "Apache-2.0" -> new java.net.URL("https://www.apache.org/licenses/LICENSE-2.0.txt"),
+    homepage := Some(url("https://scala-sbt.org")),
+    licenses += "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt"),
     scmInfo := Some(ScmInfo(
-      browseUrl = new java.net.URL("http://github.com/sbt/launcher"),
+      browseUrl = url("https://github.com/sbt/launcher"),
       connection = "scm:git@github.com:sbt/launcher.git"
     )),
     developers := List(
