@@ -32,7 +32,7 @@ object PlainApplication {
   def apply(clazz: Class[_]): xsbti.AppMain =
     findMainMethod(clazz) match {
       case Some(method) => new PlainApplication(method)
-      case None         => sys.error("Class: " + clazz + " does not have a main method!")
+      case None         => sys.error("class: " + clazz + " does not have a main method!")
     }
   private def findMainMethod(clazz: Class[_]): Option[java.lang.reflect.Method] =
     try {

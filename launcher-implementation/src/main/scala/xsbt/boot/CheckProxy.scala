@@ -27,7 +27,7 @@ object CheckProxy {
         copyEnv(envPassword, sysPassword)
       } catch {
         case e: MalformedURLException =>
-          System.err.println(s"Warning: could not parse $envURL setting: ${e.toString}")
+          Console.err.println(s"[warn] could not parse $envURL setting: ${e.toString}")
       }
     }
   }

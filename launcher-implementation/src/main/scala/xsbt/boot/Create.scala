@@ -21,7 +21,7 @@ object Initialize {
           case "s"             => process(file, spec, selectQuick)
           case "n" | "no" | "" => declined("")
           case x =>
-            System.err.println("  '" + x + "' not understood.")
+            Console.err.println("  '" + x + "' not understood.")
             create(file, promptCreate, enableQuick, spec)
         }
     }
@@ -37,7 +37,7 @@ object Initialize {
     init match {
       case set: SetProperty => properties.setProperty(name, set.value)
       case prompt: PromptProperty =>
-        def noValue = declined("No value provided for " + prompt.label)
+        def noValue = declined("no value provided for " + prompt.label)
         readLine(prompt.label + prompt.default.toList.map(" [" + _ + "]").mkString + ": ") match {
           case None => noValue
           case Some(line) =>

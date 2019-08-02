@@ -24,7 +24,7 @@ object Boot {
       val sec = Duration(s).toSeconds
       if (sec >= 1) {
         (sec to 1 by -1) foreach { i =>
-          println(s"[info] Standing by: $i")
+          Console.err.println(s"[info] standing by: $i")
           Thread.sleep(1000)
         }
       }
@@ -36,7 +36,7 @@ object Boot {
     def parse(args: List[String], isLocate: Boolean, remaining: List[String]): LauncherArguments =
       args match {
         case "--launcher-version" :: rest =>
-          println("sbt launcher version " + Package.getPackage("xsbt.boot").getImplementationVersion)
+          Console.err.println("sbt launcher version " + Package.getPackage("xsbt.boot").getImplementationVersion)
           exit(0)
         case "--locate" :: rest => parse(rest, true, remaining)
         case next :: rest       => parse(rest, isLocate, next :: remaining)
@@ -64,7 +64,7 @@ object Boot {
     }
 
   private def errorAndExit(msg: String): Nothing = {
-    System.err.println(msg)
+    Console.err.println(msg)
     exit(1)
   }
 

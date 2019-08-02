@@ -205,7 +205,7 @@ class ConfigurationParser {
         case (key, Some(BootOnly)) => Predefined(key, true)
         case (key, Some(value)) =>
           val r = trim(substituteVariables(value).split(",", 7))
-          val url = try { new URL(r(0)) } catch { case e: MalformedURLException => Pre.error("Invalid URL specified for '" + key + "': " + e.getMessage) }
+          val url = try { new URL(r(0)) } catch { case e: MalformedURLException => Pre.error("invalid URL specified for '" + key + "': " + e.getMessage) }
           val (optionPart, patterns) = r.tail.partition(OptSet.contains(_))
           val options = (optionPart.contains(BootOnly), optionPart.contains(MvnComp), optionPart.contains(DescriptorOptional), optionPart.contains(DontCheckConsistency))
           (patterns, options) match {
@@ -213,7 +213,7 @@ class ConfigurationParser {
             case (ivy :: art :: Nil, (bo, mc, dso, cc)) => Ivy(key, url, ivy, art, mavenCompatible = mc, bootOnly = bo, descriptorOptional = dso, skipConsistencyCheck = cc)
             case (Nil, (true, false, false, cc))        => Maven(key, url, bootOnly = true)
             case (Nil, (false, false, false, false))    => Maven(key, url)
-            case _                                      => Pre.error("Could not parse %s: %s".format(key, value))
+            case _                                      => Pre.error("could not parse %s: %s".format(key, value))
           }
       }
     }
@@ -224,19 +224,19 @@ class ConfigurationParser {
     }
   def parsePropertyDefinition(name: String)(value: String) = value.split("=", 2) match {
     case Array(mode, value) => (mode, parsePropertyValue(name, value)(defineProperty(name)))
-    case x                  => Pre.error("Invalid property definition '" + x + "' for property '" + name + "'")
+    case x                  => Pre.error("invalid property definition '" + x + "' for property '" + name + "'")
   }
   def defineProperty(name: String)(action: String, requiredArg: String, optionalArg: Option[String]) =
     action match {
       case "prompt" => new PromptProperty(requiredArg, optionalArg)
       case "set"    => new SetProperty(requiredArg)
-      case _        => Pre.error("Unknown action '" + action + "' for property '" + name + "'")
+      case _        => Pre.error("unknown action '" + action + "' for property '" + name + "'")
     }
   private[this] lazy val propertyPattern = Pattern.compile("""(.+)\((.*)\)(?:\[(.*)\])?""") // examples: prompt(Version)[1.0] or set(1.0)
   def parsePropertyValue[T](name: String, definition: String)(f: (String, String, Option[String]) => T): T =
     {
       val m = propertyPattern.matcher(definition)
-      if (!m.matches()) Pre.error("Invalid property definition '" + definition + "' for property '" + name + "'")
+      if (!m.matches()) Pre.error("invalid property definition '" + definition + "' for property '" + name + "'")
       val optionalArg = m.group(3)
       f(m.group(1), m.group(2), if (optionalArg eq null) None else Some(optionalArg))
     }
@@ -251,10 +251,10 @@ class ConfigurationParser {
         (((ListMap.empty.default(x => ListMap.empty[String, Option[String]]), None): State) /: lines) {
           case (x, Comment)            => x
           case ((map, _), s: Section)  => (map, Some(s.name))
-          case ((_, None), l: Labeled) => Pre.error("Label " + l.label + " is not in a section")
+          case ((_, None), l: Labeled) => Pre.error("label " + l.label + " is not in a section")
           case ((map, s @ Some(section)), l: Labeled) =>
             val sMap = map(section)
-            if (sMap.contains(l.label)) Pre.error("Duplicate label '" + l.label + "' in section '" + section + "'")
+            if (sMap.contains(l.label)) Pre.error("duplicate label '" + l.label + "' in section '" + section + "'")
             else (map(section) = (sMap(l.label) = l.value), s)
         }
       s._1
@@ -282,10 +282,10 @@ object ParseLine {
       def section =
         {
           val closing = trimmed.indexOf(']', 1)
-          check(closing > 0)(content.length, "Expected ']', found end of line")
+          check(closing > 0)(content.length, "expected ']', found end of line")
           val extra = trimmed.substring(closing + 1)
           val trimmedExtra = trimLeading(extra)
-          check(isEmpty(trimmedExtra))(content.length - trimmedExtra.length, "Expected end of line, found '" + extra + "'")
+          check(isEmpty(trimmedExtra))(content.length - trimmedExtra.length, "expected end of line, found '" + extra + "'")
           new Section(trimmed.substring(1, closing).trim)
         }
       def labeled =
@@ -293,7 +293,7 @@ object ParseLine {
           trimmed.split(":", 2) match {
             case Array(label, value) =>
               val trimmedValue = value.trim
-              check(isNonEmpty(trimmedValue))(content.indexOf(':'), "Value for '" + label + "' was empty")
+              check(isNonEmpty(trimmedValue))(content.indexOf(':'), "value for '" + label + "' was empty")
               new Labeled(label, Some(trimmedValue))
             case x => new Labeled(x.mkString, None)
           }

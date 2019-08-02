@@ -103,9 +103,9 @@ private[xsbt] class ParallelResolveEngine(
           val artifact = artifactReport.getArtifact
           val mergedAttribute = artifact.getExtraAttribute("ivy:merged")
           if (mergedAttribute != null) {
-            Message.warn(s"\tMissing merged artifact: $artifact, required by $mergedAttribute.")
+            Message.warn(s"\tmissing merged artifact: $artifact, required by $mergedAttribute.")
           } else {
-            Message.warn(s"\tDetected merged artifact: $artifactReport.")
+            Message.warn(s"\tdetected merged artifact: $artifactReport.")
             resolver.reportFailure(artifactReport.getArtifact)
           }
           size

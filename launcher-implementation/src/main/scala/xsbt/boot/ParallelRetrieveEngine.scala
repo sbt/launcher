@@ -177,7 +177,7 @@ private[xsbt] class ParallelRetrieveEngine(
         }
         if (!symlinkCreated) {
           // since symlink creation failed, let's attempt to an actual copy instead
-          Message.info("Attempting a copy operation (since symlink creation failed) at path " + destFile);
+          Message.info("attempting a copy operation (since symlink creation failed) at path " + destFile);
           FileUtil.copy(archive, destFile, null, true);
         }
       } else {

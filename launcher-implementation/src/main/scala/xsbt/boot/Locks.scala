@@ -32,7 +32,7 @@ object Locks extends xsbti.GlobalLock {
         synchronized {
           file.getParentFile.mkdirs()
           try file.createNewFile() catch {
-            case e: IOException => throw new IOException(s"Failed to create lock file $file", e)
+            case e: IOException => throw new IOException(s"failed to create lock file $file", e)
           }
           locks(file.getCanonicalFile, ())
         }
@@ -87,7 +87,7 @@ object Locks extends xsbti.GlobalLock {
           {
             val freeLock = try { channel.tryLock } catch { case e: NullPointerException => throw new InternalLockNPE(e) }
             if (freeLock eq null) {
-              System.err.println("Waiting for lock on " + file + " to be available...");
+              Console.err.println("waiting for lock on " + file + " to be available...");
               val lock = try { channel.lock } catch { case e: NullPointerException => throw new InternalLockNPE(e) }
               try { run.call }
               finally { lock.release() }

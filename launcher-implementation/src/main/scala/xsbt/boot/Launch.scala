@@ -28,7 +28,7 @@ object Launch {
     if (arguments.isLocate) {
       if (!newArgs2.isEmpty) {
         // TODO - Print the arguments without exploding proguard size.
-        System.err.println("Warning: --locate option ignores arguments.")
+        Console.err.println("[warn] --locate option ignores arguments")
       }
       locate(currentDirectory, config)
     } else {
@@ -42,7 +42,7 @@ object Launch {
     config.serverConfig match {
       case Some(_) =>
         val uri = ServerLocator.locate(currentDirectory, config)
-        System.out.println(uri.toASCIIString)
+        Console.err.println(uri.toASCIIString)
         Some(0)
       case None => sys.error(s"${config.app.groupID}-${config.app.main} is not configured as a server.")
     }
@@ -58,7 +58,7 @@ object Launch {
           case Some(file) if file.exists =>
             try setSystemProperties(readProperties(file))
             catch {
-              case e: Exception => throw new RuntimeException(s"Unable to load server properties file: ${file}", e)
+              case e: Exception => throw new RuntimeException(s"unable to load server properties file: ${file}", e)
             }
           case _ =>
         }
@@ -87,9 +87,9 @@ object Launch {
       else if (promptFill)
         Initialize.fill(propertiesFile, parsed.appProperties)
 
-      parsed.logging.debug("Parsed configuration: " + parsed)
+      parsed.logging.debug("parsed configuration: " + parsed)
       val resolved = ResolveValues(parsed)
-      resolved.logging.debug("Resolved configuration: " + resolved)
+      resolved.logging.debug("resolved configuration: " + resolved)
       resolved
     }
 
@@ -120,7 +120,7 @@ object Launch {
         case e: xsbti.Exit     => Some(e.code)
         case c: xsbti.Continue => None
         case r: xsbti.Reboot   => launch(run)(new RunConfiguration(Option(r.scalaVersion), r.app, r.baseDirectory, r.arguments.toList))
-        case x                 => throw new BootException("Invalid main result: " + x + (if (x eq null) "" else " (class: " + x.getClass + ")"))
+        case x                 => throw new BootException("invalid main result: " + x + (if (x eq null) "" else " (class: " + x.getClass + ")"))
       }
     }
   private[this] def withContextLoader[T](loader: ClassLoader)(eval: => T): T =
@@ -325,7 +325,7 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
         if (ServerApplication.isServerApplication(entryPoint)) ServerApplication(this)
         else if (AppMainClass.isAssignableFrom(entryPoint)) mainClass.newInstance
         else if (PlainApplication.isPlainApplication(entryPoint)) PlainApplication(entryPoint)
-        else throw new IncompatibleClassChangeError(s"Main class ${entryPoint.getName} is not an instance of xsbti.AppMain, xsbti.ServerMain nor does it have a valid `main` method.")
+        else throw new IncompatibleClassChangeError(s"main class ${entryPoint.getName} is not an instance of xsbti.AppMain, xsbti.ServerMain nor does it have a valid `main` method.")
       }
       lazy val components = componentProvider(appHome)
     }
@@ -397,7 +397,7 @@ class ComponentProvider(baseDirectory: File, lockBoot: Boolean) extends xsbti.Co
     {
       val location = componentLocation(id)
       if (location.exists)
-        throw new BootException("Cannot redefine component.  ID: " + id + ", files: " + files.mkString(","))
+        throw new BootException("cannot redefine component.  ID: " + id + ", files: " + files.mkString(","))
       else
         Copy(files.toList, location)
     }
