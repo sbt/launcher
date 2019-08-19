@@ -24,7 +24,7 @@ object Boot {
       val sec = Duration(s).toSeconds
       if (sec >= 1) {
         (sec to 1 by -1) foreach { i =>
-          Console.err.println(s"[info] standing by: $i")
+          Console.err.println(s"[info] [launcher] standing by: $i")
           Thread.sleep(1000)
         }
       }
@@ -56,7 +56,7 @@ object Boot {
       Launch(args) map exit
     catch {
       case b: BootException           => errorAndExit(b.toString)
-      case r: xsbti.RetrieveException => errorAndExit("Error: " + r.getMessage)
+      case r: xsbti.RetrieveException => errorAndExit(r.getMessage)
       case r: xsbti.FullReload        => Some(new LauncherArguments(r.arguments.toList, false))
       case e: Throwable =>
         e.printStackTrace
@@ -64,7 +64,9 @@ object Boot {
     }
 
   private def errorAndExit(msg: String): Nothing = {
-    Console.err.println(msg)
+    msg.linesIterator.toList foreach { line =>
+      Console.err.println("[error] [launcher] " + line)
+    }
     exit(1)
   }
 

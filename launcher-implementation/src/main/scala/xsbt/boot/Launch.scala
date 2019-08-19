@@ -28,7 +28,7 @@ object Launch {
     if (arguments.isLocate) {
       if (!newArgs2.isEmpty) {
         // TODO - Print the arguments without exploding proguard size.
-        Console.err.println("[warn] --locate option ignores arguments")
+        Console.err.println("[warn] [launcher] --locate option ignores arguments")
       }
       locate(currentDirectory, config)
     } else {
@@ -224,7 +224,16 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
       retrievedApp.fullClasspath.find(f => testInterface.matcher(f.getName).find()).foreach { f =>
         scalaProviderClassLoader.set(TestInterfaceLoader(f, initLoader))
       }
-      val scalaVersion = getOrError(strictOr(explicitScalaVersion, retrievedApp.detectedScalaVersion), "No Scala version specified or detected")
+      // https://github.com/sbt/sbt/issues/4955
+      // When sbt core artifacts are not properly downloaded, this the point that fails with "No Scala version specified or detected"
+      val scalaVersion = getOrError(
+        strictOr(explicitScalaVersion, retrievedApp.detectedScalaVersion),
+        s"""sbt/sbt#4955!
+           |sbt launcher is unable to detect the Scala version for ${id.groupID}:${id.name};
+           |this likely indicates an incomplete artifact resolution and/or corrupt boot cache (~/.sbt/boot/).
+           |the following is the full classpath that was retrieved for ${id.groupID}:${id.name}:
+           |""".stripMargin ++ retrievedApp.fullClasspath.toList.map(x => " * " + x.getAbsolutePath).mkString(System.lineSeparator)
+      )
       val scalaProvider = getScala(scalaVersion, "(for " + id.name + ")")
       val resolvedId = resolveId(retrievedApp.resolvedAppVersion, id)
 

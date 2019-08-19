@@ -18,6 +18,6 @@ object JAnsi {
 				* mitigation code that should not render sbt completely unusable if jansi initialization fails.
 				* [From Mark Harrah, https://github.com/sbt/sbt/pull/633#issuecomment-11957578].
 				*/
-      case ex: Throwable                  => Console.err.println("Jansi found on class path but initialization failed: " + ex)
+      case ex: Throwable                  => Console.err.println("[error] [launcher] Jansi found on class path but initialization failed: " + ex)
     }
 }

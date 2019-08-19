@@ -39,7 +39,7 @@ object Configuration {
     }
   def setProperty(head: String): Unit = {
     head.split("=", 2) match {
-      case Array("")         => Console.err.println(s"[warn] invalid system property '$head'")
+      case Array("")         => Console.err.println(s"[warn] [launcher] invalid system property '$head'")
       case Array(key)        => sys.props += key -> ""
       case Array(key, value) => sys.props += key -> value
     }
