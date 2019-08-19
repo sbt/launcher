@@ -106,7 +106,7 @@ final class Update(config: UpdateConfiguration) {
       catch {
         case e: Exception =>
           e.printStackTrace(logWriter)
-          log(e.toString)
+          log("[error] [launcher] " + e.toString)
           Console.err.println("  (see " + logFile + " for complete log)")
           new UpdateResult(false, None, None)
       } finally {
@@ -130,8 +130,8 @@ final class Update(config: UpdateConfiguration) {
           addDependency(moduleID, scalaOrg, CompilerModuleName, scalaVersion, "default;optional(default)", u.classifiers)
           val ddesc = addDependency(moduleID, scalaOrg, LibraryModuleName, scalaVersion, "default", u.classifiers)
           excludeJUnit(moduleID)
-          val scalaOrgString = if (scalaOrg != ScalaOrg) " " + scalaOrg else ""
-          Console.err.println(s"[info] getting $scalaOrgString Scala $scalaVersion ${reason}...")
+          val scalaOrgString = if (scalaOrg != ScalaOrg) scalaOrg + " " else ""
+          Console.err.println(s"[info] [launcher] getting ${scalaOrgString}Scala $scalaVersion ${reason}...")
           ddesc.getDependencyId
         case u: UpdateApp =>
           val app = u.id
@@ -141,7 +141,7 @@ final class Update(config: UpdateConfiguration) {
             case _                                   => app.getName
           }
           val ddesc = addDependency(moduleID, app.groupID, resolvedName, app.getVersion, "default(compile)", u.classifiers)
-          Console.err.println(s"[info] getting ${app.groupID} $resolvedName ${app.getVersion} $reason (this may take some time)...")
+          Console.err.println(s"[info] [launcher] getting ${app.groupID} $resolvedName ${app.getVersion} $reason (this may take some time)...")
           ddesc.getDependencyId
       }
       update(moduleID, target, dep)
@@ -205,7 +205,10 @@ final class Update(config: UpdateConfiguration) {
         logExceptions(resolveReport)
         val seen = new java.util.LinkedHashSet[Any]
         seen.addAll(resolveReport.getAllProblemMessages)
-        Console.err.println(seen.toArray.mkString(System.getProperty("line.separator")))
+        Console.err.println(
+          seen.toArray.map(x => s"[error] [launcher] $x")
+            .mkString(System.getProperty("line.separator"))
+        )
         error("error retrieving required libraries")
       }
       val modules = moduleRevisionIDs(resolveReport)
@@ -320,12 +323,12 @@ final class Update(config: UpdateConfiguration) {
             case MavenCentral =>
               mavenMainResolver
             case ScalaToolsReleases =>
-              log(s"$ScalaToolsReleases deprecated. use $SonatypeOSSReleases instead.")
+              log(s"[warn] [launcher] $ScalaToolsReleases deprecated. use $SonatypeOSSReleases instead.")
               sonatypeReleases
             case SonatypeOSSReleases =>
               sonatypeReleases
             case ScalaToolsSnapshots =>
-              log(s"$ScalaToolsSnapshots deprecated. use $SonatypeOSSSnapshots instead.")
+              log(s"[warn] [launcher] $ScalaToolsSnapshots deprecated. use $SonatypeOSSSnapshots instead.")
               scalaSnapshots(getScalaVersion)
             case SonatypeOSSSnapshots =>
               scalaSnapshots(getScalaVersion)
@@ -368,15 +371,15 @@ final class Update(config: UpdateConfiguration) {
   private def centralRepositoryRoot(secure: Boolean) = {
     val value = (if (secure) "https" else "http") + "://repo1.maven.org/maven2/"
     if (!secure) {
-      log(s"[warn] insecure HTTP request is deprecated '$value' via 'sbt.repository.secure'; switch to HTTPS")
-      log(s"[warn] Maven Central HTTP access is scheduled to end in January 2020")
+      log(s"[warn] [launcher] insecure HTTP request is deprecated '$value' via 'sbt.repository.secure'; switch to HTTPS")
+      log(s"[warn] [launcher]  Maven Central HTTP access is scheduled to end in January 2020")
     }
     value
   }
   private def jcenterRepositoryRoot(secure: Boolean) = {
     val value = (if (secure) "https" else "http") + "://jcenter.bintray.com/"
     if (!secure) {
-      log(s"[warn] insecure HTTP request is deprecated '$value' via 'sbt.repository.secure'; switch to HTTPS")
+      log(s"[warn] [launcher] insecure HTTP request is deprecated '$value' via 'sbt.repository.secure'; switch to HTTPS")
     }
     value
   }
@@ -417,7 +420,7 @@ final class Update(config: UpdateConfiguration) {
   private def log(msg: String) =
     {
       try { logWriter.println(msg) }
-      catch { case e: Exception => Console.err.println("error writing to update log file: " + e.toString) }
+      catch { case e: Exception => Console.err.println("[error] [launcher] error writing to update log file: " + e.toString) }
       Console.err.println(msg)
     }
 }
@@ -433,8 +436,9 @@ private final class SbtIvyLogger(logWriter: PrintWriter) extends DefaultMessageL
     if (isAlwaysIgnoreMessage(msg)) ()
     else {
       logWriter.println(msg)
-      if (level <= getLevel && acceptMessage(msg))
+      if (level <= getLevel && acceptMessage(msg)) {
         Console.err.println(msg)
+      }
     }
   override def rawlog(msg: String, level: Int): Unit = { log(msg, level) }
   /** This is a hack to filter error messages about 'unknown resolver ...'. */
