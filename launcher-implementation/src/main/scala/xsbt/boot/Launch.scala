@@ -232,7 +232,7 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
            |sbt launcher is unable to detect the Scala version for ${id.groupID}:${id.name};
            |this likely indicates an incomplete artifact resolution and/or corrupt boot cache (~/.sbt/boot/).
            |the following is the full classpath that was retrieved for ${id.groupID}:${id.name}:
-           |""".stripMargin ++ retrievedApp.fullClasspath.toList.map(x => " * " + x.getAbsolutePath).mkString(System.lineSeparator)
+           |""".stripMargin + retrievedApp.fullClasspath.toList.map(x => " * " + x.getAbsolutePath).mkString(System.lineSeparator)
       )
       val scalaProvider = getScala(scalaVersion, "(for " + id.name + ")")
       val resolvedId = resolveId(retrievedApp.resolvedAppVersion, id)
