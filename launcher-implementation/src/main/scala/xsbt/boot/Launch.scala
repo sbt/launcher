@@ -114,6 +114,7 @@ object Launch {
         JAnsi.uninstall(launcher.topLoader)
       }
     }
+  @tailrec
   final def launch(run: RunConfiguration => xsbti.MainResult)(config: RunConfiguration): Option[Int] =
     {
       run(config) match {
