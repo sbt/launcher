@@ -219,11 +219,21 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
         else
           existing(app, ScalaOrg, explicitScalaVersion, baseDirs(None)) getOrElse retrieve()
 
-      case class TestInterfaceLoader(jar: File, parent: ClassLoader) extends URLClassLoader(Array(jar.toURI.toURL), topLoader)
-      val testInterface = java.util.regex.Pattern.compile("test-interface-[0-9.]+\\.jar")
-      retrievedApp.fullClasspath.find(f => testInterface.matcher(f.getName).find()).foreach { f =>
-        scalaProviderClassLoader.set(TestInterfaceLoader(f, initLoader))
+      class EarlyLoader(jars: Array[File], parent: ClassLoader)
+        extends URLClassLoader(jars.map(_.toURI.toURL), topLoader) {
+        def getEarlyJars(): Array[URL] = getURLs()
       }
+      val testInterface = java.util.regex.Pattern.compile("test-interface-[0-9.]+\\.jar")
+      val jline = java.util.regex.Pattern.compile("(jansi|jline-[0-9.]+-sbt)-.*\\.jar")
+      def isEarly(f: File) = testInterface.matcher(f.getName).find() || jline.matcher(f.getName).find()
+      val interfaceLoader = new EarlyLoader(retrievedApp.fullClasspath.filter(isEarly), initLoader)
+      /*
+       * We need to use the getEarlyJars method or it will get stripped out by proguard
+       * and won't be accessible via reflection.
+       */
+      if (interfaceLoader.getEarlyJars().nonEmpty) {
+        scalaProviderClassLoader.set(interfaceLoader)
+      } else interfaceLoader.close()
       // https://github.com/sbt/sbt/issues/4955
       // When sbt core artifacts are not properly downloaded, this the point that fails with "No Scala version specified or detected"
       val scalaVersion = getOrError(
