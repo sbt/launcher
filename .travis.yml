@@ -30,7 +30,7 @@ before_script:
   - unset _JAVA_OPTIONS
 
 script:
-  - sbt -J-XX:ReservedCodeCacheSize=128m -Dsbt.repository.secure=false "$SCRIPTED_TEST"
+  - sbt -J-XX:ReservedCodeCacheSize=128m "$SCRIPTED_TEST"
 
 before_cache:
   - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
