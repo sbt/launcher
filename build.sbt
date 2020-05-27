@@ -28,7 +28,11 @@ lazy val launchInterfaceSub =
       generateVersionFile("sbt.launcher.version.properties")(version.value, resourceManaged.value, streams.value, (compile in Compile).value)
     }.taskValue,
     description := "Interfaces for launching projects with the sbt launcher",
-    mimaPreviousArtifacts := Set(organization.value % moduleName.value % "1.0.1")
+    mimaPreviousArtifacts := Set(organization.value % moduleName.value % "1.0.1"),
+    mimaBinaryIssueFilters ++= Seq(
+      exclude[ReversedMissingMethodProblem]("xsbti.MavenRepository.allowInsecureProtocol"),
+      exclude[ReversedMissingMethodProblem]("xsbti.IvyRepository.allowInsecureProtocol")
+    )
   ).settings(Release.settings)
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.

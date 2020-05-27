@@ -311,10 +311,10 @@ final class Update(config: UpdateConfiguration) {
     {
       import xsbti.Predefined._
       repo match {
-        case m: xsbti.MavenRepository => mavenResolver(m.id, m.url.toString)
-        case i: xsbti.IvyRepository   => urlResolver(i.id, i.url.toString, i.ivyPattern, i.artifactPattern, i.mavenCompatible, i.descriptorOptional, i.skipConsistencyCheck)
+        case m: xsbti.MavenRepository => mavenResolver(m.id, m.url.toString, m.allowInsecureProtocol)
+        case i: xsbti.IvyRepository   => urlResolver(i.id, i.url.toString, i.ivyPattern, i.artifactPattern, i.mavenCompatible, i.descriptorOptional, i.skipConsistencyCheck, i.allowInsecureProtocol)
         case p: xsbti.PredefinedRepository =>
-          val sonatypeReleases = mavenResolver("Sonatype Releases Repository", "https://oss.sonatype.org/content/repositories/releases")
+          val sonatypeReleases = mavenResolver("Sonatype Releases Repository", "https://oss.sonatype.org/content/repositories/releases", false)
           p.id match {
             case Local =>
               localResolver(settings.getDefaultIvyUserDir.getAbsolutePath)
@@ -344,52 +344,66 @@ final class Update(config: UpdateConfiguration) {
     }
   }
   /** Uses the pattern defined in BuildConfiguration to download sbt from Google code.*/
-  private def urlResolver(id: String, base: String, ivyPattern: String, artifactPattern: String, mavenCompatible: Boolean, descriptorOptional: Boolean, skipConsistencyCheck: Boolean) =
-    {
-      val resolver = new URLResolver
-      resolver.setName(id)
-      resolver.addIvyPattern(adjustPattern(base, ivyPattern))
-      resolver.addArtifactPattern(adjustPattern(base, artifactPattern))
-      resolver.setM2compatible(mavenCompatible)
-      resolver.setDescriptor(if (descriptorOptional) BasicResolver.DESCRIPTOR_OPTIONAL else BasicResolver.DESCRIPTOR_REQUIRED)
-      resolver.setCheckconsistency(!skipConsistencyCheck)
-      resolver
+  private def urlResolver(
+    id: String,
+    base: String,
+    ivyPattern: String,
+    artifactPattern: String,
+    mavenCompatible: Boolean,
+    descriptorOptional: Boolean,
+    skipConsistencyCheck: Boolean,
+    allowInsecureProtocol: Boolean
+  ) = {
+    val resolver = new URLResolver
+    resolver.setName(id)
+    resolver.addIvyPattern(adjustPattern(base, ivyPattern))
+    resolver.addArtifactPattern(adjustPattern(base, artifactPattern))
+    resolver.setM2compatible(mavenCompatible)
+    resolver.setDescriptor(if (descriptorOptional) BasicResolver.DESCRIPTOR_OPTIONAL else BasicResolver.DESCRIPTOR_REQUIRED)
+    resolver.setCheckconsistency(!skipConsistencyCheck)
+    if (allowInsecureProtocol) ()
+    else {
+      if (isInsecureUrl(base)) {
+        warnHttp(base)
+      }
     }
+    resolver
+  }
   private def adjustPattern(base: String, pattern: String): String =
     (if (base.endsWith("/") || isEmpty(base)) base else (base + "/")) + pattern
-  private def mavenLocal = mavenResolver("Maven2 Local", "file://" + System.getProperty("user.home") + "/.m2/repository/")
+  private def mavenLocal = mavenResolver("Maven2 Local", "file://" + System.getProperty("user.home") + "/.m2/repository/", false)
   /** Creates a maven-style resolver.*/
-  private def mavenResolver(name: String, root: String) =
-    {
-      val resolver = new IBiblioResolver
-      resolver.setName(name)
-      resolver.setM2compatible(true)
-      resolver.setRoot(root)
-      resolver
+  private def mavenResolver(name: String, root: String, allowInsecureProtocol: Boolean) = {
+    val resolver = new IBiblioResolver
+    resolver.setName(name)
+    resolver.setM2compatible(true)
+    resolver.setRoot(root)
+    if (!allowInsecureProtocol && isInsecureUrl(root)) {
+      warnHttp(root)
     }
+    resolver
+  }
+  private def warnHttp(value: String): Unit = {
+    log(s"[warn] [launcher] insecure HTTP request is deprecated '$value'; switch to HTTPS or opt-in as ',allowInsecureProtocol'")
+  }
+  private def isInsecureUrl(str: String): Boolean = {
+    // don't try to parse str as URL because it could contain $variable from Ivy pattern
+    str.startsWith("http:") &&
+      !(str.startsWith("http://localhost/")
+        || str.startsWith("http://localhost:")
+        || str.startsWith("http://127.0.0.1/")
+        || str.startsWith("http://127.0.0.1:"))
+  }
   private def useSecureResolvers = sys.props.get("sbt.repository.secure") map { _.toLowerCase == "true" } getOrElse true
-  private def centralRepositoryRoot(secure: Boolean) = {
-    val value = (if (secure) "https" else "http") + "://repo1.maven.org/maven2/"
-    if (!secure) {
-      log(s"[warn] [launcher] insecure HTTP request is deprecated '$value' via 'sbt.repository.secure'; switch to HTTPS")
-      log(s"[warn] [launcher]  Maven Central HTTP access is scheduled to end in January 2020")
-    }
-    value
-  }
-  private def jcenterRepositoryRoot(secure: Boolean) = {
-    val value = (if (secure) "https" else "http") + "://jcenter.bintray.com/"
-    if (!secure) {
-      log(s"[warn] [launcher] insecure HTTP request is deprecated '$value' via 'sbt.repository.secure'; switch to HTTPS")
-    }
-    value
-  }
+  private def centralRepositoryRoot: String = "https://repo1.maven.org/maven2/"
+  private def jcenterRepositoryRoot: String = "https://jcenter.bintray.com/"
 
   /** Creates a resolver for Maven Central.*/
   private def mavenMainResolver = defaultMavenResolver("Maven Central")
-  private def jcenterResolver = mavenResolver("JCenter", jcenterRepositoryRoot(useSecureResolvers))
+  private def jcenterResolver = mavenResolver("JCenter", jcenterRepositoryRoot, false)
   /** Creates a maven-style resolver with the default root.*/
   private def defaultMavenResolver(name: String) =
-    mavenResolver(name, centralRepositoryRoot(useSecureResolvers))
+    mavenResolver(name, centralRepositoryRoot, false)
   private def localResolver(ivyUserDirectory: String) =
     {
       val localIvyRoot = ivyUserDirectory + "/local"
@@ -413,7 +427,7 @@ final class Update(config: UpdateConfiguration) {
         resolver.addArtifactPattern(pattern)
         resolver
       } else
-        mavenResolver("Sonatype Snapshots Repository", "https://oss.sonatype.org/content/repositories/snapshots")
+        mavenResolver("Sonatype Snapshots Repository", "https://oss.sonatype.org/content/repositories/snapshots", false)
     }
 
   /** Logs the given message to a file and to the console. */
