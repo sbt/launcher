@@ -6,4 +6,5 @@ public interface MavenRepository extends Repository
 {
 	String id();
 	URL url();
+	boolean allowInsecureProtocol();
 }

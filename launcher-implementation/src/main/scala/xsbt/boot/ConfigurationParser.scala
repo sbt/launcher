@@ -199,21 +199,33 @@ class ConfigurationParser {
       val MvnComp = "mavenCompatible"
       val DescriptorOptional = "descriptorOptional"
       val DontCheckConsistency = "skipConsistencyCheck"
-      val OptSet = Set(BootOnly, MvnComp, DescriptorOptional, DontCheckConsistency)
+      val AllowInsecureProtocol = "allowInsecureProtocol"
+      val OptSet = Set(BootOnly, MvnComp, DescriptorOptional, DontCheckConsistency, AllowInsecureProtocol)
       m.toList.map {
         case (key, None)           => Predefined(key)
         case (key, Some(BootOnly)) => Predefined(key, true)
         case (key, Some(value)) =>
-          val r = trim(substituteVariables(value).split(",", 7))
+          val r = trim(substituteVariables(value).split(",", 8))
           val url = try { new URL(r(0)) } catch { case e: MalformedURLException => Pre.error("invalid URL specified for '" + key + "': " + e.getMessage) }
           val (optionPart, patterns) = r.tail.partition(OptSet.contains(_))
-          val options = (optionPart.contains(BootOnly), optionPart.contains(MvnComp), optionPart.contains(DescriptorOptional), optionPart.contains(DontCheckConsistency))
+          val options = (
+            optionPart.contains(BootOnly),
+            optionPart.contains(MvnComp),
+            optionPart.contains(DescriptorOptional),
+            optionPart.contains(DontCheckConsistency),
+            optionPart.contains(AllowInsecureProtocol)
+          )
           (patterns, options) match {
-            case (both :: Nil, (bo, mc, dso, cc))       => Ivy(key, url, both, both, mavenCompatible = mc, bootOnly = bo, descriptorOptional = dso, skipConsistencyCheck = cc)
-            case (ivy :: art :: Nil, (bo, mc, dso, cc)) => Ivy(key, url, ivy, art, mavenCompatible = mc, bootOnly = bo, descriptorOptional = dso, skipConsistencyCheck = cc)
-            case (Nil, (true, false, false, cc))        => Maven(key, url, bootOnly = true)
-            case (Nil, (false, false, false, false))    => Maven(key, url)
-            case _                                      => Pre.error("could not parse %s: %s".format(key, value))
+            case (both :: Nil, (bo, mc, dso, cc, ip)) =>
+              Ivy(key, url, both, both, mavenCompatible = mc, bootOnly = bo, descriptorOptional = dso, skipConsistencyCheck = cc, allowInsecureProtocol = ip)
+            case (ivy :: art :: Nil, (bo, mc, dso, cc, ip)) =>
+              Ivy(key, url, ivy, art, mavenCompatible = mc, bootOnly = bo, descriptorOptional = dso, skipConsistencyCheck = cc, allowInsecureProtocol = ip)
+            case (Nil, (true, false, false, cc, ip)) =>
+              Maven(key, url, bootOnly = true, allowInsecureProtocol = ip)
+            case (Nil, (false, false, false, false, ip)) =>
+              Maven(key, url, allowInsecureProtocol = ip)
+            case _ =>
+              Pre.error("could not parse %s: %s".format(key, value))
           }
       }
     }

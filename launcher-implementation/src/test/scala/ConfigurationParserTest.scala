@@ -38,6 +38,12 @@ object ConfigurationParserTest extends Specification {
 
       repoFileContains(
         """|[repositories]
+           |  id: http://repo1.maven.org, bootOnly, allowInsecureProtocol""".stripMargin,
+        Repository.Maven("id", new URL("http://repo1.maven.org"), true, true)
+      )
+
+      repoFileContains(
+        """|[repositories]
                                             |  id: https://repo1.maven.org, [orgPath]""".stripMargin,
         Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[orgPath]", false, false)
       )
@@ -114,6 +120,11 @@ object ConfigurationParserTest extends Specification {
         Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", true, true)
       )
 
+      repoFileContains(
+        """|[repositories]
+           |  id: http://repo1.maven.org, [orgPath], [artPath], mavenCompatible, bootOnly, allowInsecureProtocol""".stripMargin,
+        Repository.Ivy("id", new URL("http://repo1.maven.org"), "[orgPath]", "[artPath]", mavenCompatible = true, bootOnly = true, allowInsecureProtocol = true)
+      )
     }
   }
 

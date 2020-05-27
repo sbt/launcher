@@ -11,4 +11,5 @@ public interface IvyRepository extends Repository
 	boolean mavenCompatible();
 	boolean skipConsistencyCheck();
 	boolean descriptorOptional();
+	boolean allowInsecureProtocol();
 }
