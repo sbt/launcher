@@ -19,7 +19,7 @@ private object BootConfiguration {
   val LibraryModuleName = "scala-library"
 
   val JUnitName = "junit"
-  val JAnsiVersion = "1.11"
+  val JAnsiVersion = "1.18"
 
   val SbtOrg = "org.scala-sbt"
 
