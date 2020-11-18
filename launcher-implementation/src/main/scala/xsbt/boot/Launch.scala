@@ -149,7 +149,10 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
     getAppProvider(id, scalaVersion, false)
 
   val bootLoader = new BootFilteredLoader(getClass.getClassLoader)
-  private[this] val initLoader = if (isWindows && !isCygwin) jansiLoader(bootLoader) else bootLoader
+  private[this] val initLoader: ClassLoader = if (isWindows && !isCygwin) {
+    val version = sys.props.get(Configuration.SbtVersionProperty) orElse Configuration.guessSbtVersion
+    if (version.fold(false)(_.startsWith("0."))) jansiLoader(bootLoader) else bootLoader
+  } else bootLoader
   private[this] val scalaProviderClassLoader = new AtomicReference(initLoader)
   def topLoader: ClassLoader = scalaProviderClassLoader.get()
   private val scalaProviders = new Cache[(String, String), String, xsbti.ScalaProvider]((x, y) => getScalaProvider(x._1, x._2, y, scalaProviderClassLoader.get))
@@ -164,6 +167,7 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
   def checksums = checksumsList.toArray[String]
 
   // JAnsi needs to be shared between Scala and the application so there aren't two competing versions
+  @deprecated("sbt handles jansi management itself", "1.1.6")
   def jansiLoader(parent: ClassLoader): ClassLoader =
     {
       val id = AppID("org.fusesource.jansi", "jansi", JAnsiVersion, "", toArray(Nil), xsbti.CrossValue.Disabled, array())
