@@ -2,7 +2,7 @@ import Deps._
 import Util._
 import com.typesafe.tools.mima.core._, ProblemFilters._
 
-version in ThisBuild := "1.1.5-SNAPSHOT"
+version in ThisBuild := "1.1.7-SNAPSHOT"
 
 // the launcher is published with metadata so that the scripted plugin can pull it in
 // being proguarded, it shouldn't ever be on a classpath with other jars, however
