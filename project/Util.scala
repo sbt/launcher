@@ -6,17 +6,14 @@ import xsbti.compile.CompileAnalysis
 object Util {
   val publishSigned = TaskKey[Unit]("publish-signed", "Publishing all artifacts, but SIGNED using PGP.")
 
-  def noPublish(p: Project) = p.settings(noRemotePublish:_*)
-  def noRemotePublish: Seq[Setting[_]] =
-    // TODO - publishSigned
-    Seq(publish := (), publishSigned := ())
   def commonSettings(nameString: String) = Seq(
     name := nameString,
     resolvers += Resolver.typesafeIvyRepo("releases"),
     publishMavenStyle := true
   )
 
-  def minProject(path: File, nameString: String) = Project(Project.normalizeModuleID(nameString), path) settings (commonSettings(nameString) ++ Release.javaVersionCheckSettings: _*)
+  def minProject(path: File, nameString: String) = Project(Project.normalizeModuleID(nameString), path)
+    .settings(commonSettings(nameString) ++ Release.javaVersionCheckSettings: _*)
   def baseProject(path: File, nameString: String) = minProject(path, nameString) settings (base: _*)
 
   /** Configures a project to be java only. */
@@ -63,6 +60,7 @@ object Util {
   def versionLine(version: String): String = "version=" + version
   def containsVersion(propFile: File, version: String): Boolean = IO.read(propFile).contains(versionLine(version))
 }
+
 object Licensed {
   lazy val notice = SettingKey[File]("notice")
   lazy val extractLicenses = TaskKey[Seq[File]]("extract-licenses")
