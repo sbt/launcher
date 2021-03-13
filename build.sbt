@@ -74,8 +74,6 @@ def sbtBuildSettings = Seq(
   crossPaths := false,
   resolvers += Resolver.typesafeIvyRepo("releases"),
   testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
-  javacOptions in compile ++= Seq("-target", "6", "-source", "6", "-Xlint", "-Xlint:-serial"),
-  incOptions := incOptions.value.withNameHashing(true)
 )
 
 // Configuration for the launcher root project (the proguarded launcher)

@@ -1,12 +1,10 @@
 import sbt._
 import sbt.Keys._
-import StringUtilities.normalize
-
 
 object Deps {
   def lib(m: ModuleID) = libraryDependencies += m
-  lazy val sbtIo = Def.setting { "org.scala-sbt" % "io" % sbtVersion.value }
-  lazy val sbtCompileInterface = Def.setting("org.scala-sbt" % "interface" % sbtVersion.value)
+  lazy val sbtIo = Def.setting { "org.scala-sbt" % "io" % "0.13.17" }
+  lazy val sbtCompileInterface = Def.setting("org.scala-sbt" % "interface" % "0.13.17")
   lazy val scalacheck = "org.scalacheck" %% "scalacheck" % "1.11.4"
   lazy val specs2 = "org.specs2" %% "specs2" % "2.3.11"
   lazy val junit = "junit" % "junit" % "4.11"

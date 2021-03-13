@@ -1,6 +1,8 @@
 import sbt._
 import Keys._
 import Scope.{ GlobalScope, ThisScope }
+import sbt.internal.inc.Analysis
+import scala.sys.process.Process
 
 object LaunchProguard {
   lazy val Proguard = config("proguard") hide;
@@ -86,9 +88,10 @@ object LaunchProguard {
   private def generalFilter = "(!META-INF/**,!*.properties)"
 
   def dependencyOptions(launchSub: Reference) = Def.task {
+    val converter = fileConverter.value
     val cp = (dependencyClasspath in (launchSub, Compile)).value
-    val analysis = (compile in (launchSub, Compile)).value
-    mapJars(cp.files, analysis.relations.allBinaryDeps.toSeq, streams.value.log)
+    val analysis = (compile in (launchSub, Compile)).value match { case a: Analysis => a }
+    mapJars(cp.files, analysis.relations.allLibraryDeps.toSeq.map(converter.toPath(_).toFile), streams.value.log)
   }
 
   def mapJars(in: Seq[File], all: Seq[File], log: Logger): Seq[String] =
