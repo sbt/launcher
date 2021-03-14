@@ -340,7 +340,7 @@ final class Update(config: UpdateConfiguration) {
   private[this] def moduleRevisionIDs(report: ResolveReport): Seq[ModuleRevisionId] = {
     import collection.JavaConverters._
     import org.apache.ivy.core.resolve.IvyNode
-    report.getDependencies.asInstanceOf[java.util.List[IvyNode]].asScala map (_.getResolvedId)
+    report.getDependencies.asInstanceOf[java.util.List[IvyNode]].asScala.toSeq map (_.getResolvedId)
   }
 
   /** Exceptions are logged to the update log file. */

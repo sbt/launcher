@@ -4,8 +4,15 @@ import com.typesafe.tools.mima.core._, ProblemFilters._
 
 lazy val keepFullClasses = settingKey[Seq[String]]("Fully qualified names of classes that proguard should preserve the non-private API of.")
 
+Global / onChangedBuildSource := ReloadOnSourceChanges
+ThisBuild / dynverSonatypeSnapshots := true
+ThisBuild / version := {
+  val orig = (ThisBuild / version).value
+  if (orig.endsWith("-SNAPSHOT")) "1.2.0-SNAPSHOT"
+  else orig
+}
 ThisBuild / description := "Standalone launcher for maven/ivy deployed projects"
-ThisBuild / scalaVersion := "2.12.13"
+ThisBuild / scalaVersion := "2.13.5"
 ThisBuild / publishMavenStyle := true
 ThisBuild / crossPaths := false
 ThisBuild / resolvers += Resolver.typesafeIvyRepo("releases")
@@ -89,11 +96,14 @@ lazy val launchSub = (project in file("launcher-implementation"))
       (compile in Test).value
     }
     Proguard / proguardOptions ++= Seq(
-      "-keep,allowoptimization,allowshrinking class * { *; }", // no obfuscation
+      "-keep,allowshrinking class * { *; }", // no obfuscation
       "-keepattributes SourceFile,LineNumberTable", // preserve debugging information
+      "-dontobfuscate",
       "-dontnote",
-      "-dontwarn",
-      "-ignorewarnings")
+      "-dontwarn org.apache.ivy.**",
+      "-dontwarn scala.runtime.Statics",
+      "-ignorewarnings"
+    )
 
     keepFullClasses := "xsbti.**" :: Nil
     Proguard / proguardOptions ++= keepFullClasses.value map ("-keep public class " + _ + " {\n\tpublic protected * ;\n}")
@@ -111,7 +121,13 @@ lazy val launchSub = (project in file("launcher-implementation"))
 
 def generalFilter = "!META-INF/**,!*.properties"
 
-def libraryFilter = "!META-INF/**,!*.properties,!scala/util/parsing/**,**.class"
+def libraryFilter =
+  List(
+    "!META-INF/**",
+    "!*.properties",
+    "!scala/util/parsing/**",
+    "**.class"
+  ).mkString(",")
 
 def ivyFilter = {
   def excludeString(s: List[String]) = s.map("!" + _).mkString(",")
