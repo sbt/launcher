@@ -4,7 +4,7 @@
 package xsbt.boot
 
 import Pre._
-import java.io.{ File, FileInputStream, InputStreamReader }
+import java.io.{ File, InputStreamReader }
 import java.net.{ MalformedURLException, URI, URL }
 import java.util.regex.Pattern
 import scala.collection.immutable.List
@@ -43,6 +43,7 @@ object Configuration {
       case Array(key)        => sys.props += key -> ""
       case Array(key, value) => sys.props += key -> value
     }
+    ()
   }
   def configurationOnClasspath: URL =
     {

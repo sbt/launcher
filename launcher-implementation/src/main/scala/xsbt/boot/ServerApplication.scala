@@ -2,7 +2,6 @@ package xsbt
 package boot
 
 import java.io.File
-import scala.util.control.NonFatal
 import java.net.URI
 import java.io.IOException
 import Pre._
@@ -74,7 +73,6 @@ object ServerLocator {
   def writeProperties(f: File, uri: URI): Unit = {
     val props = new java.util.Properties
     props.setProperty(SERVER_URI_PROPERTY, uri.toASCIIString)
-    val output = new java.io.FileOutputStream(f)
     val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ")
     df.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
     Pre.writeProperties(props, f, s"Server Startup at ${df.format(new java.util.Date)}")

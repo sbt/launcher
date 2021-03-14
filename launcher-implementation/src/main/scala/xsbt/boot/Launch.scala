@@ -6,12 +6,12 @@ package xsbt.boot
 import Pre._
 import BootConfiguration.{ CompilerModuleName, JAnsiVersion, LibraryModuleName }
 import java.io.File
-import java.net.{ URL, URLClassLoader, URI }
+import java.net.{ URL, URLClassLoader }
 import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicReference
 
 import scala.collection.immutable.List
-import scala.annotation.tailrec
+import scala.annotation.{ nowarn, tailrec }
 import ConfigurationStorageState._
 
 class LauncherArguments(val args: List[String], val isLocate: Boolean)
@@ -149,10 +149,13 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
     getAppProvider(id, scalaVersion, false)
 
   val bootLoader = new BootFilteredLoader(getClass.getClassLoader)
+
+  @nowarn
   private[this] val initLoader: ClassLoader = if (isWindows && !isCygwin) {
     val version = sys.props.get(Configuration.SbtVersionProperty) orElse Configuration.guessSbtVersion
     if (version.fold(false)(_.startsWith("0."))) jansiLoader(bootLoader) else bootLoader
   } else bootLoader
+
   private[this] val scalaProviderClassLoader = new AtomicReference(initLoader)
   def topLoader: ClassLoader = scalaProviderClassLoader.get()
   private val scalaProviders = new Cache[(String, String), String, xsbti.ScalaProvider]((x, y) => getScalaProvider(x._1, x._2, y, scalaProviderClassLoader.get))
@@ -171,7 +174,6 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
   def jansiLoader(parent: ClassLoader): ClassLoader =
     {
       val id = AppID("org.fusesource.jansi", "jansi", JAnsiVersion, "", toArray(Nil), xsbti.CrossValue.Disabled, array())
-      val configuration = makeConfiguration(ScalaOrg, None)
       val jansiHome = appDirectory(new File(bootDirectory, baseDirectoryName(ScalaOrg, None)), id)
       val module = appModule(id, None, false, "jansi")
       def makeLoader(): ClassLoader = {
@@ -317,7 +319,7 @@ class Launch private[xsbt] (val bootDirectory: File, val lockBoot: Boolean, val 
 
   def appProvider(appID: xsbti.ApplicationID, app: RetrievedModule, scalaProvider0: xsbti.ScalaProvider, appHome: File): xsbti.AppProvider =
     new xsbti.AppProvider {
-      import Launch.{ ServerMainClass, AppMainClass }
+      import Launch.AppMainClass
       val scalaProvider = scalaProvider0
       val id = appID
       def mainClasspath = app.fullClasspath
@@ -414,6 +416,7 @@ class ComponentProvider(baseDirectory: File, lockBoot: Boolean) extends xsbti.Co
         throw new BootException("cannot redefine component.  ID: " + id + ", files: " + files.mkString(","))
       else
         Copy(files.toList, location)
+      ()
     }
   def addToComponent(id: String, files: Array[File]): Boolean =
     Copy(files.toList, componentLocation(id))

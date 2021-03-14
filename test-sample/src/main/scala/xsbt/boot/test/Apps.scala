@@ -37,13 +37,15 @@ class PriorityTest extends xsbti.AppMain {
 object PriorityTest {
   def run(configuration: xsbti.AppConfiguration) =
     new Exit(0)
-  def main(args: Array[String]): Int =
+  def main(args: Array[String]): Unit =
     throw new MainException("This should not be called")
 }
 object PlainArgumentTestWithReturn {
-  def main(args: Array[String]): Int =
+  def main(args: Array[String]): Unit = {
     if (args.length == 0) 1
     else 0
+    ()
+  }
 }
 object PlainArgumentTest {
   def main(args: Array[String]): Unit =

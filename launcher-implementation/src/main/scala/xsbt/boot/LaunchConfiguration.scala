@@ -6,6 +6,7 @@ package xsbt.boot
 import Pre._
 import java.io.File
 import java.net.URL
+import scala.annotation.nowarn
 import scala.collection.immutable.List
 
 //TODO: use copy constructor, check size change
@@ -94,6 +95,7 @@ object Application {
       Application(groupID, new Explicit(name), new Explicit(version), mainClass, mainComponents.toList, safeCrossVersionedValue(id), classpathExtra)
     }
 
+  @nowarn
   private def safeCrossVersionedValue(id: xsbti.ApplicationID): xsbti.CrossValue =
     try id.crossVersionedValue
     catch {

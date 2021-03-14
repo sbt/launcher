@@ -1,7 +1,5 @@
 package xsbt.boot
 
-import java.util.concurrent.Executors
-
 import org.apache.ivy.core.event.EventManager
 import org.apache.ivy.core.event.download.PrepareDownloadEvent
 import org.apache.ivy.core.module.descriptor.Artifact
@@ -12,7 +10,7 @@ import org.apache.ivy.util.Message
 import org.apache.ivy.util.filter.Filter
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.concurrent.{ Await, Future }
 
 private[xsbt] case class DownloadResult(
   dep: IvyNode,

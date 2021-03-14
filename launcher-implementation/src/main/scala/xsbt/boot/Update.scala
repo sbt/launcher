@@ -4,7 +4,7 @@
 package xsbt.boot
 
 import Pre._
-import java.io.{ File, FileWriter, PrintWriter, Writer }
+import java.io.{ File, FileWriter, PrintWriter }
 import java.util.concurrent.Callable
 import java.util.regex.Pattern
 import java.util.Properties
@@ -23,6 +23,7 @@ import core.sort.SortEngine
 import core.settings.IvySettings
 import plugins.matcher.{ ExactPatternMatcher, PatternMatcher }
 import plugins.resolver.{ BasicResolver, ChainResolver, FileSystemResolver, IBiblioResolver, URLResolver }
+import scala.annotation.nowarn
 import util.{ DefaultMessageLogger, filter, Message, MessageLoggerEngine, url }
 import filter.Filter
 import url.CredentialsStore
@@ -58,10 +59,10 @@ final class Update(config: UpdateConfiguration) {
         Option(System.getenv("SBT_CREDENTIALS")) map (path =>
           Pre.readProperties(new File(substituteTilde(path))))
     optionProps match {
-      case Some(props) => extractCredentials("realm", "host", "user", "password")(props)
+      case Some(props) => extractCredentials(("realm", "host", "user", "password"))(props)
       case None        => ()
     }
-    extractCredentials("sbt.boot.realm", "sbt.boot.host", "sbt.boot.user", "sbt.boot.password")(System.getProperties)
+    extractCredentials(("sbt.boot.realm", "sbt.boot.host", "sbt.boot.user", "sbt.boot.password"))(System.getProperties)
   }
   private def extractCredentials(keys: (String, String, String, String))(props: Properties): Unit = {
     val List(realm, host, user, password) = keys.productIterator.map(key => props.getProperty(key.toString)).toList
@@ -250,6 +251,7 @@ final class Update(config: UpdateConfiguration) {
     val scalaV = strictOr(scalaVersion, autoScalaVersion)
     retrieveOptions.setDestArtifactPattern(baseDirectoryName(scalaOrg, scalaV) + "/" + pattern)
     retrieveEngine.retrieve(module.getModuleRevisionId, retrieveOptions)
+    ()
   }
   private[this] def notCoreScala(a: IArtifact) = a.getName match {
     case LibraryModuleName | CompilerModuleName => false
@@ -273,8 +275,8 @@ final class Update(config: UpdateConfiguration) {
   // infrastructure is needed to avoid duplication between this class and the ivy/ subproject
   private def hasImplicitClassifier(artifact: IArtifact): Boolean =
     {
-      import collection.JavaConversions._
-      artifact.getQualifiedExtraAttributes.keys.exists(_.asInstanceOf[String] startsWith "m:")
+      import collection.JavaConverters._
+      artifact.getQualifiedExtraAttributes.asScala.keys.exists(_.asInstanceOf[String] startsWith "m:")
     }
   // exclude the local Maven repository for Scala -SNAPSHOTs
   private def includeRepo(repo: xsbti.Repository) = !(Repository.isMavenLocal(repo) && isSnapshot(getScalaVersion))
@@ -307,6 +309,8 @@ final class Update(config: UpdateConfiguration) {
     settings.addRepositoryCacheManager(manager)
     settings.setDefaultRepositoryCacheManager(manager)
   }
+
+  @nowarn
   private def toIvyRepository(settings: IvySettings, repo: xsbti.Repository) =
     {
       import xsbti.Predefined._
@@ -337,12 +341,7 @@ final class Update(config: UpdateConfiguration) {
           }
       }
     }
-  private def onDefaultRepositoryCacheManager(settings: IvySettings)(f: DefaultRepositoryCacheManager => Unit): Unit = {
-    settings.getDefaultRepositoryCacheManager match {
-      case manager: DefaultRepositoryCacheManager => f(manager)
-      case _                                      => ()
-    }
-  }
+
   /** Uses the pattern defined in BuildConfiguration to download sbt from Google code.*/
   private def urlResolver(
     id: String,
@@ -394,7 +393,6 @@ final class Update(config: UpdateConfiguration) {
         || str.startsWith("http://127.0.0.1/")
         || str.startsWith("http://127.0.0.1:"))
   }
-  private def useSecureResolvers = sys.props.get("sbt.repository.secure") map { _.toLowerCase == "true" } getOrElse true
   private def centralRepositoryRoot: String = "https://repo1.maven.org/maven2/"
   private def jcenterRepositoryRoot: String = "https://jcenter.bintray.com/"
 

@@ -3,10 +3,11 @@
  */
 package xsbt.boot
 
-import scala.collection.immutable.List
 import java.io.{ File, FileFilter }
-import java.net.{ URL, URLClassLoader }
+import java.net.URL
 import java.util.Locale
+import scala.annotation.nowarn
+import scala.collection.immutable.List
 
 object Pre {
   def readLine(prompt: String): Option[String] = {
@@ -27,6 +28,8 @@ object Pre {
   def declined(msg: String): Nothing = throw new BootException(msg)
   def prefixError(msg: String): String = "error during sbt launcher: " + msg
   def toBoolean(s: String) = java.lang.Boolean.parseBoolean(s)
+
+  @nowarn
   def toArray[T: ClassManifest](list: List[T]) =
     {
       val arr = new Array[T](list.length)
@@ -77,6 +80,7 @@ object Pre {
       if (fs ne null) fs foreach delete
     }
     if (f.exists) f.delete()
+    ()
   }
   final val isWindows: Boolean = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")
   final val isCygwin: Boolean = isWindows && java.lang.Boolean.getBoolean("sbt.cygwin")

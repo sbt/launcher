@@ -4,7 +4,6 @@ import java.util.{ Set => julSet, Map => julMap }
 import java.io.IOException
 import java.io.File
 import java.util.Arrays
-import java.util.concurrent.Executors
 
 import org.apache.ivy.core.IvyContext
 import org.apache.ivy.core.event.EventManager
@@ -19,7 +18,7 @@ import org.apache.ivy.util.FileUtil
 
 import scala.collection.mutable.{ Set => mSet }
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.concurrent.{ Await, Future }
 
 private[xsbt] case class RetResult(
   destFile: File,
@@ -73,7 +72,7 @@ private[xsbt] class ParallelRetrieveEngine(
 
       report.setRetrieveRoot(fileRetrieveRoot)
 
-      val ivyRetrieveRoot =
+      val _ =
         if (destIvyPattern == null) null
         else settings.resolveFile(IvyPatternHelper.getTokenRoot(destIvyPattern))
 
@@ -81,9 +80,9 @@ private[xsbt] class ParallelRetrieveEngine(
       import scala.collection.JavaConverters._
       type ValueType = julSet[String]
       val allRetrivedFuture = artifactsToCopy.entrySet().asScala.map {
-        case artifactAndPaths: julMap.Entry[ArtifactDownloadReport, ValueType] =>
+        case artifactAndPaths: julMap.Entry[ArtifactDownloadReport, ValueType] @unchecked =>
           val artifact: ArtifactDownloadReport = artifactAndPaths.getKey()
-          var archive: File = artifact.getLocalFile()
+          val archive: File = artifact.getLocalFile()
 
           if (archive == null) {
             Message.verbose("\tno local file available for " + artifact + ": skipping")
@@ -95,7 +94,7 @@ private[xsbt] class ParallelRetrieveEngine(
               case path: String =>
                 Future {
                   IvyContext.getContext().checkInterrupted()
-                  val destFile = settings.resolveFile(path)
+                  val _ = settings.resolveFile(path)
                   retrieveFile(
                     settings,
                     eventManager,
@@ -110,7 +109,7 @@ private[xsbt] class ParallelRetrieveEngine(
       }
 
       val allRetrived: mSet[RetResult] =
-        Await.result(Future.reduce(allRetrivedFuture)(_ ++ _), Duration.Inf)
+        Await.result(Future.reduceLeft(allRetrivedFuture.toList)(_ ++ _), Duration.Inf)
 
       val totalCopiedSize = allRetrived.foldLeft(0L) {
         case (sum, ret) =>

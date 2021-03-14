@@ -3,11 +3,10 @@ import sbt.Keys._
 
 object Deps {
   def lib(m: ModuleID) = libraryDependencies += m
-  lazy val sbtIo = Def.setting { "org.scala-sbt" % "io" % "0.13.17" }
-  lazy val sbtCompileInterface = Def.setting("org.scala-sbt" % "interface" % "0.13.17")
-  lazy val scalacheck = "org.scalacheck" %% "scalacheck" % "1.11.4"
-  lazy val specs2 = "org.specs2" %% "specs2" % "2.3.11"
+  lazy val sbtIo = "org.scala-sbt" %% "io" % "1.4.0"
+  lazy val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.3"
   lazy val junit = "junit" % "junit" % "4.11"
+  lazy val verify = "com.eed3si9n.verify" %% "verify" % "1.0.0"
 
   // TODO - these should be like the above, just ModuleIDs
   lazy val ivy = "org.scala-sbt.ivy" % "ivy" % "2.3.0-sbt-839fad1cdc07cf6fc81364d74c323867230432ad"

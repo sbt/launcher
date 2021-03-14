@@ -5,9 +5,6 @@ group: stable
 language: scala
 
 env:
-  global:
-    - TRAVIS_JDK=zulu@1.7.222
-    - JABBA_HOME=/home/travis/.jabba
   matrix:
     - SCRIPTED_TEST="; mimaReportBinaryIssues; test; proguard"
 
@@ -15,15 +12,11 @@ before_install:
   - curl -sL https://raw.githubusercontent.com/shyiko/jabba/0.10.1/install.sh | bash && . ~/.jabba/jabba.sh
 
 install:
-  - curl -L --fail https://github.com/sbt/sbt/releases/download/v0.13.18/sbt-0.13.18.tgz > sbt-0.13.18.tgz
-  - tar zxf ./sbt-0.13.18.tgz -C $HOME/
+  - curl -L --fail https://github.com/sbt/sbt/releases/download/v1.4.9/sbt-1.4.9.tgz > sbt-1.4.9.tgz
+  - tar zxf ./sbt-1.4.9.tgz -C $HOME/
   - export PATH="$HOME/sbt/bin:$PATH"
   - export SBT_OPTS="-Xms2048M -Xmx2048M -Xss2M -XX:MaxPermSize=512M"
   - sbt about
-  - $JABBA_HOME/bin/jabba install "$TRAVIS_JDK"
-  - export JAVA_HOME="$JABBA_HOME/jdk/$TRAVIS_JDK"
-  - export PATH="$JAVA_HOME/bin:$PATH"
-  - java -version
 
 # Undo _JAVA_OPTIONS environment variable
 before_script:

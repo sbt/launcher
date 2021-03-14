@@ -4,8 +4,6 @@
 package xsbt.boot
 
 import Pre._
-import java.io.{ File, FileInputStream }
-import java.util.Properties
 
 object ResolveValues {
   def apply(conf: LaunchConfiguration): LaunchConfiguration = (new ResolveValues(conf))()
