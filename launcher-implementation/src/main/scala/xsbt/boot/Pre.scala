@@ -8,6 +8,7 @@ import java.net.URL
 import java.util.Locale
 import scala.annotation.nowarn
 import scala.collection.immutable.List
+import scala.reflect.ClassTag
 
 object Pre {
   def readLine(prompt: String): Option[String] = {
@@ -32,7 +33,7 @@ object Pre {
   def toBoolean(s: String) = java.lang.Boolean.parseBoolean(s)
 
   @nowarn
-  def toArray[T: ClassManifest](list: List[T]) = {
+  def toArray[T: ClassTag](list: List[T]) = {
     val arr = new Array[T](list.length)
     def copy(i: Int, rem: List[T]): Unit =
       if (i < arr.length) {

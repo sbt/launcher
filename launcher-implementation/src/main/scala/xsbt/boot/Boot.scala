@@ -23,8 +23,10 @@ object Boot {
 
   def standBy(): Unit = {
     import scala.concurrent.duration.Duration
-    sys.props.get("sbt.launcher.standby") foreach { s =>
-      val sec = Duration(s).toSeconds
+    val x = System.getProperty("sbt.launcher.standby")
+    if (x == null) ()
+    else {
+      val sec = Duration(x).toSeconds
       if (sec >= 1) {
         (sec to 1 by -1) foreach { i =>
           Console.err.println(s"[info] [launcher] standing by: $i")

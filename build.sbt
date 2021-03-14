@@ -4,10 +4,15 @@ import com.typesafe.tools.mima.core._, ProblemFilters._
 
 lazy val keepFullClasses = settingKey[Seq[String]]("Fully qualified names of classes that proguard should preserve the non-private API of.")
 
-ThisBuild / version     := "1.1.7-SNAPSHOT"
+Global / onChangedBuildSource := ReloadOnSourceChanges
+ThisBuild / dynverSonatypeSnapshots := true
+ThisBuild / version := {
+  val orig = (ThisBuild / version).value
+  if (orig.endsWith("-SNAPSHOT")) "1.2.0-SNAPSHOT"
+  else orig
+}
 ThisBuild / description := "Standalone launcher for maven/ivy deployed projects"
-ThisBuild / bintrayPackage := "launcher"
-ThisBuild / scalaVersion := "2.12.13"
+ThisBuild / scalaVersion := "2.13.5"
 ThisBuild / publishMavenStyle := true
 ThisBuild / crossPaths := false
 ThisBuild / resolvers += Resolver.typesafeIvyRepo("releases")
@@ -20,7 +25,7 @@ lazy val root = (project in file("."))
   .settings(javaOnly ++ Util.commonSettings("launcher") ++ Release.settings)
   .settings(nocomma {
     mimaPreviousArtifacts := Set.empty
-    // packageBin in Compile := (LaunchProguard.proguard in LaunchProguard.Proguard).value
+    Compile / packageBin := (launchSub / Proguard / proguard).value.head
     packageSrc in Compile := (packageSrc in Compile in launchSub).value
     packageDoc in Compile := (packageDoc in Compile in launchSub).value
     commands += Command.command("release") { state =>
@@ -91,11 +96,14 @@ lazy val launchSub = (project in file("launcher-implementation"))
       (compile in Test).value
     }
     Proguard / proguardOptions ++= Seq(
-      "-keep,allowoptimization,allowshrinking class * { *; }", // no obfuscation
+      "-keep,allowshrinking class * { *; }", // no obfuscation
       "-keepattributes SourceFile,LineNumberTable", // preserve debugging information
+      "-dontobfuscate",
       "-dontnote",
-      "-dontwarn",
-      "-ignorewarnings")
+      "-dontwarn org.apache.ivy.**",
+      "-dontwarn scala.runtime.Statics",
+      "-ignorewarnings"
+    )
 
     keepFullClasses := "xsbti.**" :: Nil
     Proguard / proguardOptions ++= keepFullClasses.value map ("-keep public class " + _ + " {\n\tpublic protected * ;\n}")
@@ -113,7 +121,13 @@ lazy val launchSub = (project in file("launcher-implementation"))
 
 def generalFilter = "!META-INF/**,!*.properties"
 
-def libraryFilter = "!META-INF/**,!*.properties,!scala/util/parsing/**,**.class"
+def libraryFilter =
+  List(
+    "!META-INF/**",
+    "!*.properties",
+    "!scala/util/parsing/**",
+    "**.class"
+  ).mkString(",")
 
 def ivyFilter = {
   def excludeString(s: List[String]) = s.map("!" + _).mkString(",")
@@ -143,3 +157,22 @@ lazy val testSamples = (project in file("test-sample"))
     publishSigned := { () }
     libraryDependencies += scalaCompiler.value
   })
+
+ThisBuild / organization := "org.scala-sbt"
+ThisBuild / pomIncludeRepository := { x => false }
+ThisBuild / homepage := Some(url("https://scala-sbt.org"))
+ThisBuild / licenses += "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt")
+ThisBuild / scmInfo := Some(ScmInfo(
+  browseUrl = url("https://github.com/sbt/launcher"),
+  connection = "scm:git@github.com:sbt/launcher.git"
+))
+ThisBuild / developers := List(
+  Developer("eed3si9n", "Eugene Yokota", "@eed3si9n", url("https://github.com/eed3si9n")),
+  Developer("jsuereth", "Josh Suereth", "@jsuereth", url("https://github.com/jsuereth")),
+  Developer("dwijnand", "Dale Wijnand", "@dwijnand", url("https://github.com/dwijnand"))
+)
+ThisBuild / publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (version.value.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else                             Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}

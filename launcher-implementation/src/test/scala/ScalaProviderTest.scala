@@ -2,7 +2,7 @@ package xsbt.boot
 
 import java.io.{ File, InputStream }
 import java.util.Properties
-import xsbti._
+import xsbti.{ Repository => _, Launcher => _, _ }
 import LaunchTest._
 import sbt.io.IO.{ createDirectory, touch, withTemporaryDirectory }
 
@@ -100,7 +100,7 @@ object ScalaProviderTest extends verify.BasicTestSuite {
   private def checkScalaLoader(version: String) =
     withLauncher(checkLauncher(version, mapScalaVersion(version)))
 
-  private def checkLauncher(version: String, versionValue: String)(launcher: Launcher) = {
+  private def checkLauncher(version: String, versionValue: String)(launcher: xsbti.Launcher) = {
     import scala.language.reflectiveCalls
     val provider = launcher.getScala(version)
     val loader = provider.loader
