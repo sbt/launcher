@@ -6,7 +6,7 @@ package xsbt.boot
 import Pre._
 import BootConfiguration.{ CompilerModuleName, JAnsiVersion, LibraryModuleName }
 import java.io.File
-import java.net.{ URL, URLClassLoader }
+import java.net.{ URI, URL, URLClassLoader }
 import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicReference
 
@@ -14,29 +14,57 @@ import scala.collection.immutable.List
 import scala.annotation.{ nowarn, tailrec }
 import ConfigurationStorageState._
 
-class LauncherArguments(val args: List[String], val isLocate: Boolean)
+class LauncherArguments(val args: List[String], val isLocate: Boolean, val isExportRt: Boolean)
 
 object Launch {
   def apply(arguments: LauncherArguments): Option[Int] =
     apply((new File("")).getAbsoluteFile, arguments)
 
-  def apply(currentDirectory: File, arguments: LauncherArguments): Option[Int] = {
-    val (configLocation, newArgs2, state) = Configuration.find(arguments.args, currentDirectory)
-    val config = state match {
-      case SerializedFile => LaunchConfiguration.restore(configLocation)
-      case PropertiesFile => parseAndInitializeConfig(configLocation, currentDirectory)
-    }
-    if (arguments.isLocate) {
-      if (!newArgs2.isEmpty) {
-        // TODO - Print the arguments without exploding proguard size.
-        Console.err.println("[warn] [launcher] --locate option ignores arguments")
+  def apply(currentDirectory: File, arguments: LauncherArguments): Option[Int] =
+    if (arguments.isExportRt) {
+      if (arguments.args.size != 1) {
+        sys.error("destination expected: --export-rt <dest>")
       }
-      locate(currentDirectory, config)
+      exportRt(arguments.args.head)
     } else {
-      // First check to see if there are java system properties we need to set. Then launch the application.
-      updateProperties(config)
-      launch(run(Launcher(config)))(makeRunConfig(currentDirectory, config, newArgs2))
+      val (configLocation, newArgs2, state) = Configuration.find(arguments.args, currentDirectory)
+      val config = state match {
+        case SerializedFile => LaunchConfiguration.restore(configLocation)
+        case PropertiesFile => parseAndInitializeConfig(configLocation, currentDirectory)
+      }
+      if (arguments.isLocate) {
+        if (!newArgs2.isEmpty) {
+          // TODO - Print the arguments without exploding proguard size.
+          Console.err.println("[warn] [launcher] --locate option ignores arguments")
+        }
+        locate(currentDirectory, config)
+      } else {
+        // First check to see if there are java system properties we need to set. Then launch the application.
+        updateProperties(config)
+        launch(run(Launcher(config)))(makeRunConfig(currentDirectory, config, newArgs2))
+      }
     }
+
+  def exportRt(destination: String): Option[Int] = {
+    import java.nio.file._
+    import java.util.HashMap
+    val fileSystem = FileSystems.getFileSystem(URI.create("jrt:/"))
+    val path: Path = fileSystem.getPath("/modules")
+    val destPath: Path = Paths.get(destination)
+    val uri = URI.create("jar:" + destPath.toUri())
+    val env = new HashMap[String, String]()
+    env.put("create", "true")
+    val zipfs = FileSystems.newFileSystem(uri, env)
+    try {
+      val iterator = Files.list(path).iterator()
+      while (iterator.hasNext()) {
+        val next = iterator.next()
+        IO.copyDirectory(next, zipfs.getPath("/"))
+      }
+    } finally {
+      zipfs.close
+    }
+    Some(0)
   }
 
   /** Locate a server, print where it is, and exit. */
