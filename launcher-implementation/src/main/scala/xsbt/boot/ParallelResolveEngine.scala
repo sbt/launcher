@@ -13,9 +13,9 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, Future }
 
 private[xsbt] case class DownloadResult(
-  dep: IvyNode,
-  report: DownloadReport,
-  totalSizeDownloaded: Long
+    dep: IvyNode,
+    report: DownloadReport,
+    totalSizeDownloaded: Long
 )
 
 object ParallelResolveEngine {
@@ -24,16 +24,15 @@ object ParallelResolveEngine {
 
 /** Define an ivy [[ResolveEngine]] that resolves dependencies in parallel. */
 private[xsbt] class ParallelResolveEngine(
-  settings: ResolveEngineSettings,
-  eventManager: EventManager,
-  sortEngine: SortEngine
-)
-  extends ResolveEngine(settings, eventManager, sortEngine) {
+    settings: ResolveEngineSettings,
+    eventManager: EventManager,
+    sortEngine: SortEngine
+) extends ResolveEngine(settings, eventManager, sortEngine) {
 
   override def downloadArtifacts(
-    report: ResolveReport,
-    artifactFilter: Filter,
-    options: DownloadOptions
+      report: ResolveReport,
+      artifactFilter: Filter,
+      options: DownloadOptions
   ): Unit = {
     import scala.collection.JavaConverters._
     val start = System.currentTimeMillis
@@ -47,7 +46,7 @@ private[xsbt] class ParallelResolveEngine(
       case dep: IvyNode =>
         Future {
           if (!(dep.isCompletelyEvicted || dep.hasProblem) &&
-            dep.getModuleRevision != null) {
+              dep.getModuleRevision != null) {
             Some(downloadNodeArtifacts(dep, artifactFilter, options))
           } else None
         }
@@ -63,7 +62,7 @@ private[xsbt] class ParallelResolveEngine(
 
           // Take into account artifacts required by the given configuration
           if (dependency.isEvicted(configuration) ||
-            dependency.isBlacklisted(configuration)) {
+              dependency.isBlacklisted(configuration)) {
             configurationReport.addDependency(dependency)
           } else configurationReport.addDependency(dependency, download.report)
         }
@@ -82,9 +81,9 @@ private[xsbt] class ParallelResolveEngine(
    * Return the report and the total downloaded size.
    */
   private def downloadNodeArtifacts(
-    dependency: IvyNode,
-    artifactFilter: Filter,
-    options: DownloadOptions
+      dependency: IvyNode,
+      artifactFilter: Filter,
+      options: DownloadOptions
   ): DownloadResult = {
 
     val resolver = dependency.getModuleRevision.getArtifactResolver

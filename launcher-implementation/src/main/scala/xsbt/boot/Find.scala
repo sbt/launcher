@@ -8,39 +8,46 @@ import java.io.File
 import java.net.URI
 import scala.collection.immutable.List
 
-object Find { def apply(config: LaunchConfiguration, currentDirectory: File) = (new Find(config))(currentDirectory) }
+object Find {
+  def apply(config: LaunchConfiguration, currentDirectory: File) =
+    (new Find(config))(currentDirectory)
+}
 class Find(config: LaunchConfiguration) {
   import config.boot.search
-  def apply(currentDirectory: File) =
-    {
-      val current = currentDirectory.getCanonicalFile
-      assert(current.isDirectory)
+  def apply(currentDirectory: File) = {
+    val current = currentDirectory.getCanonicalFile
+    assert(current.isDirectory)
 
-      lazy val fromRoot = path(current, Nil).filter(hasProject).map(_.getCanonicalFile)
-      val found: Option[File] =
-        search.tpe match {
-          case Search.RootFirst => fromRoot.headOption
-          case Search.Nearest   => fromRoot.lastOption
-          case Search.Only =>
-            if (hasProject(current))
-              Some(current)
-            else
-              fromRoot match {
-                case Nil         => Some(current)
-                case head :: Nil => Some(head)
-                case xs =>
-                  Console.err.println("[error] [launcher] search method is 'only' and multiple ancestor directories match:\n\t" + fromRoot.mkString("\n\t"))
-                  System.exit(1)
-                  None
-              }
-          case _ => Some(current)
-        }
-      val baseDirectory = orElse(found, current)
-      System.setProperty("user.dir", baseDirectory.getAbsolutePath)
-      (ResolvePaths(config, baseDirectory), baseDirectory)
-    }
-  private def hasProject(f: File) = f.isDirectory && search.paths.forall(p => ResolvePaths(f, p).exists)
-  private def path(f: File, acc: List[File]): List[File] = if (f eq null) acc else path(f.getParentFile, f :: acc)
+    lazy val fromRoot = path(current, Nil).filter(hasProject).map(_.getCanonicalFile)
+    val found: Option[File] =
+      search.tpe match {
+        case Search.RootFirst => fromRoot.headOption
+        case Search.Nearest   => fromRoot.lastOption
+        case Search.Only =>
+          if (hasProject(current))
+            Some(current)
+          else
+            fromRoot match {
+              case Nil         => Some(current)
+              case head :: Nil => Some(head)
+              case xs =>
+                Console.err.println(
+                  "[error] [launcher] search method is 'only' and multiple ancestor directories match:\n\t" + fromRoot
+                    .mkString("\n\t")
+                )
+                System.exit(1)
+                None
+            }
+        case _ => Some(current)
+      }
+    val baseDirectory = orElse(found, current)
+    System.setProperty("user.dir", baseDirectory.getAbsolutePath)
+    (ResolvePaths(config, baseDirectory), baseDirectory)
+  }
+  private def hasProject(f: File) =
+    f.isDirectory && search.paths.forall(p => ResolvePaths(f, p).exists)
+  private def path(f: File, acc: List[File]): List[File] =
+    if (f eq null) acc else path(f.getParentFile, f :: acc)
 }
 object ResolvePaths {
   def apply(config: LaunchConfiguration, baseDirectory: File): LaunchConfiguration =

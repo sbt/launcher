@@ -15,23 +15,21 @@ import ResolveValues.{ trim }
 final class ResolveValues(conf: LaunchConfiguration) {
   private def propertiesFile = conf.boot.properties
   private lazy val properties = readProperties(propertiesFile)
-  def apply(): LaunchConfiguration =
-    {
-      import conf._
-      val scalaVersion = resolve(conf.scalaVersion)
-      val appVersion = resolve(app.version)
-      val appName = resolve(app.name)
-      val classifiers = resolveClassifiers(ivyConfiguration.classifiers)
-      withNameAndVersions(scalaVersion, appVersion, appName, classifiers)
-    }
-  def resolveClassifiers(classifiers: Classifiers): Classifiers =
-    {
-      import ConfigurationParser.readIDs
-      // the added "" ensures that the main jars are retrieved
-      val scalaClassifiers = "" :: resolve(classifiers.forScala)
-      val appClassifiers = "" :: resolve(classifiers.app)
-      Classifiers(new Explicit(scalaClassifiers), new Explicit(appClassifiers))
-    }
+  def apply(): LaunchConfiguration = {
+    import conf._
+    val scalaVersion = resolve(conf.scalaVersion)
+    val appVersion = resolve(app.version)
+    val appName = resolve(app.name)
+    val classifiers = resolveClassifiers(ivyConfiguration.classifiers)
+    withNameAndVersions(scalaVersion, appVersion, appName, classifiers)
+  }
+  def resolveClassifiers(classifiers: Classifiers): Classifiers = {
+    import ConfigurationParser.readIDs
+    // the added "" ensures that the main jars are retrieved
+    val scalaClassifiers = "" :: resolve(classifiers.forScala)
+    val appClassifiers = "" :: resolve(classifiers.app)
+    Classifiers(new Explicit(scalaClassifiers), new Explicit(appClassifiers))
+  }
   def resolve[T](v: Value[T])(implicit read: String => T): T =
     v match {
       case e: Explicit[t] => e.value

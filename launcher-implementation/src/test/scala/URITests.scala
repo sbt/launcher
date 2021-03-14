@@ -37,7 +37,7 @@ object URITests extends Properties("URI Tests") {
       s"getRawPath: ${fpURI.getRawPath}" |:
       (fpURI == directURI) &&
       (fpURI.getPath == decoded) &&
-      (fpURI.getRawPath == encoded)
+    (fpURI.getRawPath == encoded)
   }
 
   property("filePathURI and File.toURI agree for absolute file") = secure {
@@ -61,7 +61,7 @@ object URITests extends Properties("URI Tests") {
       s"getRawPath: ${fpURI.getRawPath}" |:
       (fpURI == directURI) &&
       (fpURI.getPath == decoded) &&
-      (fpURI.getRawPath == encoded)
+    (fpURI.getRawPath == encoded)
   }
 
 }

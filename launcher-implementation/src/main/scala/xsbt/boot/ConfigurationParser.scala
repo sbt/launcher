@@ -16,27 +16,27 @@ object ConfigurationParser {
   def ids(value: String) = trim(substituteVariables(value).split(",")).filter(isNonEmpty)
 
   private[this] lazy val VarPattern = Pattern.compile("""\$\{([\w.]+)(\-(.*))?\}""")
-  def substituteVariables(s: String): String = if (s.indexOf('$') >= 0) substituteVariables0(s) else s
+  def substituteVariables(s: String): String =
+    if (s.indexOf('$') >= 0) substituteVariables0(s) else s
   // scala.util.Regex brought in 30kB, so we code it explicitly
-  def substituteVariables0(s: String): String =
-    {
-      val m = VarPattern.matcher(s)
-      val b = new StringBuffer
-      while (m.find()) {
-        val key = m.group(1)
-        val defined = System.getProperty(key)
-        val value =
-          if (defined ne null)
-            defined
-          else {
-            val default = m.group(3)
-            if (default eq null) m.group() else substituteVariables(default)
-          }
-        m.appendReplacement(b, quoteReplacement(value))
-      }
-      m.appendTail(b)
-      b.toString
+  def substituteVariables0(s: String): String = {
+    val m = VarPattern.matcher(s)
+    val b = new StringBuffer
+    while (m.find()) {
+      val key = m.group(1)
+      val defined = System.getProperty(key)
+      val value =
+        if (defined ne null)
+          defined
+        else {
+          val default = m.group(3)
+          if (default eq null) m.group() else substituteVariables(default)
+        }
+      m.appendReplacement(b, quoteReplacement(value))
     }
+    m.appendTail(b)
+    b.toString
+  }
 
   implicit val readIDs = ids _
 }
@@ -63,31 +63,29 @@ class ConfigurationParser {
   def processRepositoriesConfig(sections: SectionMap): List[Repository.Repository] =
     processSection(sections, "repositories", getRepositories)._1
   // section -> configuration instance  processing
-  def processSections(sections: SectionMap): LaunchConfiguration =
-    {
-      val ((scalaVersion, scalaClassifiers), m1) = processSection(sections, "scala", getScala)
-      val ((app, appClassifiers), m2) = processSection(m1, "app", getApplication)
-      val (defaultRepositories, m3) = processSection(m2, "repositories", getRepositories)
-      val (boot, m4) = processSection(m3, "boot", getBoot)
-      val (logging, m5) = processSection(m4, "log", getLogging)
-      val (properties, m6) = processSection(m5, "app-properties", getAppProperties)
-      val ((ivyHome, checksums, isOverrideRepos, rConfigFile), m7) = processSection(m6, "ivy", getIvy)
-      val (serverOptions, m8) = processSection(m7, "server", getServer)
-      check(m8, "section")
-      val classifiers = Classifiers(scalaClassifiers, appClassifiers)
-      val repositories = rConfigFile map readRepositoriesConfig getOrElse defaultRepositories
-      val ivyOptions = IvyOptions(ivyHome, classifiers, repositories, checksums, isOverrideRepos)
+  def processSections(sections: SectionMap): LaunchConfiguration = {
+    val ((scalaVersion, scalaClassifiers), m1) = processSection(sections, "scala", getScala)
+    val ((app, appClassifiers), m2) = processSection(m1, "app", getApplication)
+    val (defaultRepositories, m3) = processSection(m2, "repositories", getRepositories)
+    val (boot, m4) = processSection(m3, "boot", getBoot)
+    val (logging, m5) = processSection(m4, "log", getLogging)
+    val (properties, m6) = processSection(m5, "app-properties", getAppProperties)
+    val ((ivyHome, checksums, isOverrideRepos, rConfigFile), m7) = processSection(m6, "ivy", getIvy)
+    val (serverOptions, m8) = processSection(m7, "server", getServer)
+    check(m8, "section")
+    val classifiers = Classifiers(scalaClassifiers, appClassifiers)
+    val repositories = rConfigFile map readRepositoriesConfig getOrElse defaultRepositories
+    val ivyOptions = IvyOptions(ivyHome, classifiers, repositories, checksums, isOverrideRepos)
 
-      // TODO - Read server properties...
-      new LaunchConfiguration(scalaVersion, ivyOptions, app, boot, logging, properties, serverOptions)
-    }
-  def getScala(m: LabelMap) =
-    {
-      val (scalaVersion, m1) = getVersion(m, "Scala version", "scala.version")
-      val (scalaClassifiers, m2) = getClassifiers(m1, "Scala classifiers")
-      check(m2, "label")
-      (scalaVersion, scalaClassifiers)
-    }
+    // TODO - Read server properties...
+    new LaunchConfiguration(scalaVersion, ivyOptions, app, boot, logging, properties, serverOptions)
+  }
+  def getScala(m: LabelMap) = {
+    val (scalaVersion, m1) = getVersion(m, "Scala version", "scala.version")
+    val (scalaClassifiers, m2) = getClassifiers(m1, "Scala classifiers")
+    check(m2, "label")
+    (scalaVersion, scalaClassifiers)
+  }
   def getClassifiers(m: LabelMap, label: String): (Value[List[String]], LabelMap) =
     process(m, "classifiers", processClassifiers(label))
   def processClassifiers(label: String)(value: Option[String]): Value[List[String]] =
@@ -98,64 +96,70 @@ class ConfigurationParser {
   def processVersion(label: String, defaultName: String)(value: Option[String]): Value[String] =
     value.map(readValue[String](label)).getOrElse(new Implicit(defaultName, None))
 
-  def getName(m: LabelMap, label: String, defaultName: String, defaultValue: String): (Value[String], LabelMap) =
+  def getName(
+      m: LabelMap,
+      label: String,
+      defaultName: String,
+      defaultValue: String
+  ): (Value[String], LabelMap) =
     process(m, "name", processName(label, defaultName, defaultValue))
-  def processName(label: String, defaultName: String, defaultValue: String)(value: Option[String]): Value[String] =
+  def processName(label: String, defaultName: String, defaultValue: String)(
+      value: Option[String]
+  ): Value[String] =
     value.map(readValue[String](label)).getOrElse(new Implicit(defaultName, Some(defaultValue)))
 
-  def readValue[T](label: String)(implicit read: String => T): String => Value[T] = value0 =>
-    {
-      val value = substituteVariables(value0)
-      if (isEmpty(value)) Pre.error(label + " cannot be empty (omit declaration to use the default)")
-      try { parsePropertyValue(label, value)(Value.readImplied[T]) }
-      catch { case e: BootException => new Explicit(read(value)) }
-    }
+  def readValue[T](label: String)(implicit read: String => T): String => Value[T] = value0 => {
+    val value = substituteVariables(value0)
+    if (isEmpty(value)) Pre.error(label + " cannot be empty (omit declaration to use the default)")
+    try {
+      parsePropertyValue(label, value)(Value.readImplied[T])
+    } catch { case e: BootException => new Explicit(read(value)) }
+  }
   def processSection[T](sections: SectionMap, name: String, f: LabelMap => T) =
     process[String, LabelMap, T](sections, name, m => f(m default (x => None)))
-  def process[K, V, T](sections: ListMap[K, V], name: K, f: V => T): (T, ListMap[K, V]) = (f(sections(name)), sections - name)
-  def check(map: ListMap[String, _], label: String): Unit = if (map.isEmpty) () else Pre.error(map.keys.mkString("Invalid " + label + "(s): ", ",", ""))
+  def process[K, V, T](sections: ListMap[K, V], name: K, f: V => T): (T, ListMap[K, V]) =
+    (f(sections(name)), sections - name)
+  def check(map: ListMap[String, _], label: String): Unit =
+    if (map.isEmpty) () else Pre.error(map.keys.mkString("Invalid " + label + "(s): ", ",", ""))
   def check[T](label: String, pair: (T, ListMap[String, _])): T = { check(pair._2, label); pair._1 }
   def id(map: LabelMap, name: String, default: String): (String, LabelMap) =
     (substituteVariables(orElse(getOrNone(map, name), default)), map - name)
   def getOrNone[K, V](map: ListMap[K, Option[V]], k: K) = orElse(map.get(k), None)
-  def ids(map: LabelMap, name: String, default: List[String]) =
-    {
-      val result = map(name) map ConfigurationParser.ids
-      (orElse(result, default), map - name)
-    }
-  def bool(map: LabelMap, name: String, default: Boolean): (Boolean, LabelMap) =
-    {
-      val (b, m) = id(map, name, default.toString)
-      (toBoolean(b), m)
-    }
+  def ids(map: LabelMap, name: String, default: List[String]) = {
+    val result = map(name) map ConfigurationParser.ids
+    (orElse(result, default), map - name)
+  }
+  def bool(map: LabelMap, name: String, default: Boolean): (Boolean, LabelMap) = {
+    val (b, m) = id(map, name, default.toString)
+    (toBoolean(b), m)
+  }
 
   def toFiles(paths: List[String]): List[File] = paths.map(toFile)
-  def toFile(path: String): File = new File(substituteVariables(path).replace('/', File.separatorChar)) // if the path is relative, it will be resolved by Launch later
+  def toFile(path: String): File =
+    new File(substituteVariables(path).replace('/', File.separatorChar)) // if the path is relative, it will be resolved by Launch later
   def file(map: LabelMap, name: String, default: File): (File, LabelMap) =
     (orElse(getOrNone(map, name).map(toFile), default), map - name)
   def optfile(map: LabelMap, name: String): (Option[File], LabelMap) =
     (getOrNone(map, name).map(toFile), map - name)
-  def getIvy(m: LabelMap): (Option[File], List[String], Boolean, Option[File]) =
-    {
-      val (ivyHome, m1) = optfile(m, "ivy-home")
-      val (checksums, m2) = ids(m1, "checksums", BootConfiguration.DefaultChecksums)
-      val (overrideRepos, m3) = bool(m2, "override-build-repos", false)
-      val (repoConfig, m4) = optfile(m3, "repository-config")
-      check(m4, "label")
-      (ivyHome, checksums, overrideRepos, repoConfig filter (_.exists))
-    }
-  def getBoot(m: LabelMap): BootSetup =
-    {
-      val (dir, m1) = file(m, "directory", toFile("project/boot"))
-      val (props, m2) = file(m1, "properties", toFile("project/build.properties"))
-      val (search, m3) = getSearch(m2, props)
-      val (enableQuick, m4) = bool(m3, "quick-option", false)
-      val (promptFill, m5) = bool(m4, "prompt-fill", false)
-      val (promptCreate, m6) = id(m5, "prompt-create", "")
-      val (lock, m7) = bool(m6, "lock", true)
-      check(m7, "label")
-      BootSetup(dir, lock, props, search, promptCreate, enableQuick, promptFill)
-    }
+  def getIvy(m: LabelMap): (Option[File], List[String], Boolean, Option[File]) = {
+    val (ivyHome, m1) = optfile(m, "ivy-home")
+    val (checksums, m2) = ids(m1, "checksums", BootConfiguration.DefaultChecksums)
+    val (overrideRepos, m3) = bool(m2, "override-build-repos", false)
+    val (repoConfig, m4) = optfile(m3, "repository-config")
+    check(m4, "label")
+    (ivyHome, checksums, overrideRepos, repoConfig filter (_.exists))
+  }
+  def getBoot(m: LabelMap): BootSetup = {
+    val (dir, m1) = file(m, "directory", toFile("project/boot"))
+    val (props, m2) = file(m1, "properties", toFile("project/build.properties"))
+    val (search, m3) = getSearch(m2, props)
+    val (enableQuick, m4) = bool(m3, "quick-option", false)
+    val (promptFill, m5) = bool(m4, "prompt-fill", false)
+    val (promptCreate, m6) = id(m5, "prompt-create", "")
+    val (lock, m7) = bool(m6, "lock", true)
+    check(m7, "label")
+    BootSetup(dir, lock, props, search, promptCreate, enableQuick, promptFill)
+  }
   def getLogging(m: LabelMap): Logging = check("label", process(m, "level", getLevel))
   def getLevel(m: Option[String]) = m.map(LogLevel.apply).getOrElse(new Logging(LogLevel.Info))
   def getSearch(m: LabelMap, defaultPath: File): (Search, LabelMap) =
@@ -165,69 +169,100 @@ class ConfigurationParser {
       case (tpe :: paths, newM) => (Search(tpe, toFiles(paths)), newM)
     }
 
-  def getApplication(m: LabelMap): (Application, Value[List[String]]) =
-    {
-      val (org, m1) = id(m, "org", BootConfiguration.SbtOrg)
-      val (name, m2) = id(m1, "name", "sbt")
-      val (appName, _) = getName(m1, name + " name", name + ".name", name)
-      val (rev, m3) = getVersion(m2, name + " version", name + ".version")
-      val (main, m4) = id(m3, "class", "xsbt.Main")
-      val (components, m5) = ids(m4, "components", List("default"))
-      val (crossVersioned, m6) = id(m5, "cross-versioned", CrossVersionUtil.binaryString)
-      val (resources, m7) = ids(m6, "resources", Nil)
-      val (classifiers, m8) = getClassifiers(m7, "Application classifiers")
-      check(m8, "label")
-      val classpathExtra = toArray(toFiles(resources))
-      val app = new Application(org, appName, rev, main, components, LaunchCrossVersion(crossVersioned), classpathExtra)
-      (app, classifiers)
+  def getApplication(m: LabelMap): (Application, Value[List[String]]) = {
+    val (org, m1) = id(m, "org", BootConfiguration.SbtOrg)
+    val (name, m2) = id(m1, "name", "sbt")
+    val (appName, _) = getName(m1, name + " name", name + ".name", name)
+    val (rev, m3) = getVersion(m2, name + " version", name + ".version")
+    val (main, m4) = id(m3, "class", "xsbt.Main")
+    val (components, m5) = ids(m4, "components", List("default"))
+    val (crossVersioned, m6) = id(m5, "cross-versioned", CrossVersionUtil.binaryString)
+    val (resources, m7) = ids(m6, "resources", Nil)
+    val (classifiers, m8) = getClassifiers(m7, "Application classifiers")
+    check(m8, "label")
+    val classpathExtra = toArray(toFiles(resources))
+    val app = new Application(
+      org,
+      appName,
+      rev,
+      main,
+      components,
+      LaunchCrossVersion(crossVersioned),
+      classpathExtra
+    )
+    (app, classifiers)
+  }
+  def getServer(m: LabelMap): (Option[ServerConfiguration]) = {
+    val (lock, m1) = optfile(m, "lock")
+    // TODO - JVM args
+    val (args, m2) = optfile(m1, "jvmargs")
+    val (props, m3) = optfile(m2, "jvmprops")
+    lock map { file =>
+      ServerConfiguration(file, args, props)
     }
-  def getServer(m: LabelMap): (Option[ServerConfiguration]) =
-    {
-      val (lock, m1) = optfile(m, "lock")
-      // TODO - JVM args
-      val (args, m2) = optfile(m1, "jvmargs")
-      val (props, m3) = optfile(m2, "jvmprops")
-      lock map { file =>
-        ServerConfiguration(file, args, props)
-      }
+  }
+  def getRepositories(m: LabelMap): List[Repository.Repository] = {
+    import Repository.{ Ivy, Maven, Predefined }
+    val BootOnly = "bootOnly"
+    val MvnComp = "mavenCompatible"
+    val DescriptorOptional = "descriptorOptional"
+    val DontCheckConsistency = "skipConsistencyCheck"
+    val AllowInsecureProtocol = "allowInsecureProtocol"
+    val OptSet =
+      Set(BootOnly, MvnComp, DescriptorOptional, DontCheckConsistency, AllowInsecureProtocol)
+    m.toList.map {
+      case (key, None)           => Predefined(key)
+      case (key, Some(BootOnly)) => Predefined(key, true)
+      case (key, Some(value)) =>
+        val r = trim(substituteVariables(value).split(",", 8))
+        val url = try {
+          new URL(r(0))
+        } catch {
+          case e: MalformedURLException =>
+            Pre.error("invalid URL specified for '" + key + "': " + e.getMessage)
+        }
+        val (optionPart, patterns) = r.tail.partition(OptSet.contains(_))
+        val options = (
+          optionPart.contains(BootOnly),
+          optionPart.contains(MvnComp),
+          optionPart.contains(DescriptorOptional),
+          optionPart.contains(DontCheckConsistency),
+          optionPart.contains(AllowInsecureProtocol)
+        )
+        (patterns, options) match {
+          case (both :: Nil, (bo, mc, dso, cc, ip)) =>
+            Ivy(
+              key,
+              url,
+              both,
+              both,
+              mavenCompatible = mc,
+              bootOnly = bo,
+              descriptorOptional = dso,
+              skipConsistencyCheck = cc,
+              allowInsecureProtocol = ip
+            )
+          case (ivy :: art :: Nil, (bo, mc, dso, cc, ip)) =>
+            Ivy(
+              key,
+              url,
+              ivy,
+              art,
+              mavenCompatible = mc,
+              bootOnly = bo,
+              descriptorOptional = dso,
+              skipConsistencyCheck = cc,
+              allowInsecureProtocol = ip
+            )
+          case (Nil, (true, false, false, cc, ip)) =>
+            Maven(key, url, bootOnly = true, allowInsecureProtocol = ip)
+          case (Nil, (false, false, false, false, ip)) =>
+            Maven(key, url, allowInsecureProtocol = ip)
+          case _ =>
+            Pre.error("could not parse %s: %s".format(key, value))
+        }
     }
-  def getRepositories(m: LabelMap): List[Repository.Repository] =
-    {
-      import Repository.{ Ivy, Maven, Predefined }
-      val BootOnly = "bootOnly"
-      val MvnComp = "mavenCompatible"
-      val DescriptorOptional = "descriptorOptional"
-      val DontCheckConsistency = "skipConsistencyCheck"
-      val AllowInsecureProtocol = "allowInsecureProtocol"
-      val OptSet = Set(BootOnly, MvnComp, DescriptorOptional, DontCheckConsistency, AllowInsecureProtocol)
-      m.toList.map {
-        case (key, None)           => Predefined(key)
-        case (key, Some(BootOnly)) => Predefined(key, true)
-        case (key, Some(value)) =>
-          val r = trim(substituteVariables(value).split(",", 8))
-          val url = try { new URL(r(0)) } catch { case e: MalformedURLException => Pre.error("invalid URL specified for '" + key + "': " + e.getMessage) }
-          val (optionPart, patterns) = r.tail.partition(OptSet.contains(_))
-          val options = (
-            optionPart.contains(BootOnly),
-            optionPart.contains(MvnComp),
-            optionPart.contains(DescriptorOptional),
-            optionPart.contains(DontCheckConsistency),
-            optionPart.contains(AllowInsecureProtocol)
-          )
-          (patterns, options) match {
-            case (both :: Nil, (bo, mc, dso, cc, ip)) =>
-              Ivy(key, url, both, both, mavenCompatible = mc, bootOnly = bo, descriptorOptional = dso, skipConsistencyCheck = cc, allowInsecureProtocol = ip)
-            case (ivy :: art :: Nil, (bo, mc, dso, cc, ip)) =>
-              Ivy(key, url, ivy, art, mavenCompatible = mc, bootOnly = bo, descriptorOptional = dso, skipConsistencyCheck = cc, allowInsecureProtocol = ip)
-            case (Nil, (true, false, false, cc, ip)) =>
-              Maven(key, url, bootOnly = true, allowInsecureProtocol = ip)
-            case (Nil, (false, false, false, false, ip)) =>
-              Maven(key, url, allowInsecureProtocol = ip)
-            case _ =>
-              Pre.error("could not parse %s: %s".format(key, value))
-          }
-      }
-    }
+  }
   def getAppProperties(m: LabelMap): List[AppProperty] =
     for ((name, Some(value)) <- m.toList) yield {
       val map = ListMap(trim(value.split(",")).map(parsePropertyDefinition(name)): _*)
@@ -237,39 +272,45 @@ class ConfigurationParser {
     case Array(mode, value) => (mode, parsePropertyValue(name, value)(defineProperty(name)))
     case x                  => Pre.error("invalid property definition '" + x + "' for property '" + name + "'")
   }
-  def defineProperty(name: String)(action: String, requiredArg: String, optionalArg: Option[String]) =
+  def defineProperty(
+      name: String
+  )(action: String, requiredArg: String, optionalArg: Option[String]) =
     action match {
       case "prompt" => new PromptProperty(requiredArg, optionalArg)
       case "set"    => new SetProperty(requiredArg)
       case _        => Pre.error("unknown action '" + action + "' for property '" + name + "'")
     }
   private[this] lazy val propertyPattern = Pattern.compile("""(.+)\((.*)\)(?:\[(.*)\])?""") // examples: prompt(Version)[1.0] or set(1.0)
-  def parsePropertyValue[T](name: String, definition: String)(f: (String, String, Option[String]) => T): T =
-    {
-      val m = propertyPattern.matcher(definition)
-      if (!m.matches()) Pre.error("invalid property definition '" + definition + "' for property '" + name + "'")
-      val optionalArg = m.group(3)
-      f(m.group(1), m.group(2), if (optionalArg eq null) None else Some(optionalArg))
-    }
+  def parsePropertyValue[T](name: String, definition: String)(
+      f: (String, String, Option[String]) => T
+  ): T = {
+    val m = propertyPattern.matcher(definition)
+    if (!m.matches())
+      Pre.error("invalid property definition '" + definition + "' for property '" + name + "'")
+    val optionalArg = m.group(3)
+    f(m.group(1), m.group(2), if (optionalArg eq null) None else Some(optionalArg))
+  }
 
   type LabelMap = ListMap[String, Option[String]]
   // section-name -> label -> value
   type SectionMap = ListMap[String, LabelMap]
-  def processLines(lines: List[Line]): SectionMap =
-    {
-      type State = (SectionMap, Option[String])
-      val s: State =
-        lines.foldLeft((ListMap.empty.default(x => ListMap.empty[String, Option[String]]), None): State) {
-          case (x, Comment)            => x
-          case ((map, _), s: Section)  => (map, Some(s.name))
-          case ((_, None), l: Labeled) => Pre.error("label " + l.label + " is not in a section")
-          case ((map, s @ Some(section)), l: Labeled) =>
-            val sMap = map(section)
-            if (sMap.contains(l.label)) Pre.error("duplicate label '" + l.label + "' in section '" + section + "'")
-            else (map(section) = (sMap(l.label) = l.value), s)
-        }
-      s._1
-    }
+  def processLines(lines: List[Line]): SectionMap = {
+    type State = (SectionMap, Option[String])
+    val s: State =
+      lines.foldLeft(
+        (ListMap.empty.default(x => ListMap.empty[String, Option[String]]), None): State
+      ) {
+        case (x, Comment)            => x
+        case ((map, _), s: Section)  => (map, Some(s.name))
+        case ((_, None), l: Labeled) => Pre.error("label " + l.label + " is not in a section")
+        case ((map, s @ Some(section)), l: Labeled) =>
+          val sMap = map(section)
+          if (sMap.contains(l.label))
+            Pre.error("duplicate label '" + l.label + "' in section '" + section + "'")
+          else (map(section) = (sMap(l.label) = l.value), s)
+      }
+    s._1
+  }
 
 }
 
@@ -279,45 +320,52 @@ final class Section(val name: String) extends Line
 object Comment extends Line
 
 class ParseException(val content: String, val line: Int, val col: Int, val msg: String)
-  extends BootException("[" + (line + 1) + ", " + (col + 1) + "]" + msg + "\n" + content + "\n" + List.fill(col)(" ").mkString + "^")
+    extends BootException(
+      "[" + (line + 1) + ", " + (col + 1) + "]" + msg + "\n" + content + "\n" + List
+        .fill(col)(" ")
+        .mkString + "^"
+    )
 
 object ParseLine {
-  def apply(content: String, line: Int) =
-    {
-      def error(col: Int, msg: String) = throw new ParseException(content, line, col, msg)
-      def check(condition: Boolean)(col: Int, msg: String) = if (condition) () else error(col, msg)
+  def apply(content: String, line: Int) = {
+    def error(col: Int, msg: String) = throw new ParseException(content, line, col, msg)
+    def check(condition: Boolean)(col: Int, msg: String) = if (condition) () else error(col, msg)
 
-      val trimmed = trimLeading(content)
+    val trimmed = trimLeading(content)
 
-      def section =
-        {
-          val closing = trimmed.indexOf(']', 1)
-          check(closing > 0)(content.length, "expected ']', found end of line")
-          val extra = trimmed.substring(closing + 1)
-          val trimmedExtra = trimLeading(extra)
-          check(isEmpty(trimmedExtra))(content.length - trimmedExtra.length, "expected end of line, found '" + extra + "'")
-          new Section(trimmed.substring(1, closing).trim)
-        }
-      def labeled =
-        {
-          trimmed.split(":", 2) match {
-            case Array(label, value) =>
-              val trimmedValue = value.trim
-              check(isNonEmpty(trimmedValue))(content.indexOf(':'), "value for '" + label + "' was empty")
-              new Labeled(label, Some(trimmedValue))
-            case x => new Labeled(x.mkString, None)
-          }
-        }
-
-      if (isEmpty(trimmed)) Nil
-      else {
-        val processed =
-          trimmed.charAt(0) match {
-            case '#' => Comment
-            case '[' => section
-            case _   => labeled
-          }
-        processed :: Nil
+    def section = {
+      val closing = trimmed.indexOf(']', 1)
+      check(closing > 0)(content.length, "expected ']', found end of line")
+      val extra = trimmed.substring(closing + 1)
+      val trimmedExtra = trimLeading(extra)
+      check(isEmpty(trimmedExtra))(
+        content.length - trimmedExtra.length,
+        "expected end of line, found '" + extra + "'"
+      )
+      new Section(trimmed.substring(1, closing).trim)
+    }
+    def labeled = {
+      trimmed.split(":", 2) match {
+        case Array(label, value) =>
+          val trimmedValue = value.trim
+          check(isNonEmpty(trimmedValue))(
+            content.indexOf(':'),
+            "value for '" + label + "' was empty"
+          )
+          new Labeled(label, Some(trimmedValue))
+        case x => new Labeled(x.mkString, None)
       }
     }
+
+    if (isEmpty(trimmed)) Nil
+    else {
+      val processed =
+        trimmed.charAt(0) match {
+          case '#' => Comment
+          case '[' => section
+          case _   => labeled
+        }
+      processed :: Nil
+    }
+  }
 }

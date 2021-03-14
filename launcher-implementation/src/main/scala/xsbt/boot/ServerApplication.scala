@@ -18,6 +18,7 @@ class ServerApplication private (provider: xsbti.AppProvider) extends xsbti.AppM
     server.awaitTermination()
   }
 }
+
 /** An object that lets us detect compatible "plain" applications and launch them reflectively. */
 object ServerApplication {
   val SERVER_SYNCH_TEXT = "[SERVER-URI]"
@@ -47,15 +48,16 @@ object ServerLocator {
   def locate(currentDirectory: File, config: LaunchConfiguration): URI =
     config.serverConfig match {
       case None => sys.error("no server lock file configured. cannot locate server.")
-      case Some(sc) => locked(makeLockFile(sc.lockFile)) {
-        readProperties(sc.lockFile) match {
-          case Some(uri) if isReachable(uri) => uri
-          case _ =>
-            val uri = ServerLauncher.startServer(currentDirectory, config)
-            writeProperties(sc.lockFile, uri)
-            uri
+      case Some(sc) =>
+        locked(makeLockFile(sc.lockFile)) {
+          readProperties(sc.lockFile) match {
+            case Some(uri) if isReachable(uri) => uri
+            case _ =>
+              val uri = ServerLauncher.startServer(currentDirectory, config)
+              writeProperties(sc.lockFile, uri)
+              uri
+          }
         }
-      }
     }
 
   private val SERVER_URI_PROPERTY = "server.uri"
@@ -89,6 +91,7 @@ object ServerLocator {
       case e: IOException => false
     }
 }
+
 /** A helper class that dumps incoming values into a print stream. */
 class StreamDumper(in: java.io.BufferedReader, out: java.io.PrintStream) extends Thread {
   // Don't block the application for this thread.
@@ -116,8 +119,7 @@ class StreamDumper(in: java.io.BufferedReader, out: java.io.PrintStream) extends
       // before we check whether to sleep
       Thread.`yield`()
       // let ourselves read more (thread should exit on earlier of endTime or EOF)
-      while (isAlive() && (endTime.get > System.currentTimeMillis))
-        Thread.sleep(50)
+      while (isAlive() && (endTime.get > System.currentTimeMillis)) Thread.sleep(50)
     } else {
       endTime.set(System.currentTimeMillis)
     }
@@ -128,7 +130,10 @@ object ServerLauncher {
   def startServer(currentDirectory: File, config: LaunchConfiguration): URI = {
     val serverConfig = config.serverConfig match {
       case Some(c) => c
-      case None    => throw new RuntimeException("logic failure: attempting to start a server that isn't configured to be a server. please report a bug.")
+      case None =>
+        throw new RuntimeException(
+          "logic failure: attempting to start a server that isn't configured to be a server. please report a bug."
+        )
     }
     val launchConfig = java.io.File.createTempFile("sbtlaunch", "config")
     if (System.getenv("SBT_SERVER_SAVE_TEMPS") eq null)
@@ -156,15 +161,19 @@ object ServerLauncher {
     val stderr = process.getErrorStream
     val stdout = process.getInputStream
     // Now we start dumping out errors.
-    val errorDumper = new StreamDumper(new java.io.BufferedReader(new java.io.InputStreamReader(stderr)), System.err)
+    val errorDumper = new StreamDumper(
+      new java.io.BufferedReader(new java.io.InputStreamReader(stderr)),
+      System.err
+    )
     errorDumper.start()
     // Now we look for the URI synch value, and then make sure we close the output files.
     try readUntilSynch(new java.io.BufferedReader(new java.io.InputStreamReader(stdout))) match {
       case Some(uri) => uri
-      case _ =>
+      case _         =>
         // attempt to get rid of the server (helps prevent hanging / stuck locks,
         // though this is not reliable)
-        try process.destroy() catch { case e: Exception => }
+        try process.destroy()
+        catch { case e: Exception => }
         // block a second to try to get stuff from stderr
         errorDumper.close(waitForErrors = true)
         sys.error(s"failed to start server process in ${pb.directory} command line ${pb.command}")
@@ -184,6 +193,7 @@ object ServerLauncher {
         Some(new URI(in.substring(SERVER_SYNCH_TEXT.size)))
       } else None
   }
+
   /** Reads an input steam until it hits the server synch text and server URI. */
   def readUntilSynch(in: java.io.BufferedReader): Option[URI] = {
     @tailrec
@@ -195,10 +205,14 @@ object ServerLauncher {
     try read()
     finally in.close()
   }
+
   /** Reads all the lines in a file. If it doesn't exist, returns an empty list.  Forces UTF-8 strings. */
   def readLines(f: File): List[String] =
-    if (!f.exists) Nil else {
-      val reader = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(f), "UTF-8"))
+    if (!f.exists) Nil
+    else {
+      val reader = new java.io.BufferedReader(
+        new java.io.InputStreamReader(new java.io.FileInputStream(f), "UTF-8")
+      )
       @tailrec
       def read(current: List[String]): List[String] =
         reader.readLine match {
@@ -217,7 +231,9 @@ object ServerLauncher {
         source <- Option(domain.getCodeSource)
         location = source.getLocation
       } yield toFile(location)
-      fileOpt.getOrElse(throw new RuntimeException("could not inspect protection domain or code source"))
+      fileOpt.getOrElse(
+        throw new RuntimeException("could not inspect protection domain or code source")
+      )
     } catch {
       case e: Throwable => throw new RuntimeException("unable to find sbt-launch.jar.", e)
     }

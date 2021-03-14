@@ -21,7 +21,7 @@ object LocksTest extends Properties("Locks") {
     withTemporaryDirectory { dir =>
       val lockFile = new File(dir, "lock")
       Locks(lockFile, callLocked(lockFile)) &&
-        Locks(lockFile, callLocked(lockFile))
+      Locks(lockFile, callLocked(lockFile))
     }
   }
 
@@ -30,14 +30,16 @@ object LocksTest extends Properties("Locks") {
       val lockFileA = new File(dir, "lockA")
       val lockFileB = new File(dir, "lockB")
       Locks(lockFileA, callLocked(lockFileB)) &&
-        Locks(lockFileB, callLocked(lockFileA))
+      Locks(lockFileB, callLocked(lockFileA))
     }
   }
 
   property("Contested single lock") = spec {
     withTemporaryDirectory { dir =>
       val lockFile = new File(dir, "lock")
-      forkFold(2000) { i => Locks(lockFile, callTrue) }
+      forkFold(2000) { i =>
+        Locks(lockFile, callTrue)
+      }
     }
   }
 
@@ -60,7 +62,9 @@ object LocksTest extends Properties("Locks") {
     import scala.concurrent.Await
     import scala.concurrent.duration.Duration.Inf
     // TODO - Don't wait forever...
-    val futures = (0 until n).map { i => Future { impl(i) } }
+    val futures = (0 until n).map { i =>
+      Future { impl(i) }
+    }
     futures.toList.map(f => Await.result(f, Inf))
   }
 }

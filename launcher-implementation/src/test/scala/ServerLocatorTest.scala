@@ -26,7 +26,9 @@ object ServerLocatorTest extends verify.BasicTestSuite {
       }
     }
     serverThread.start()
-    val uri = new java.net.URI(s"http://${serverSocket.getInetAddress.getHostAddress}:${serverSocket.getLocalPort}")
+    val uri = new java.net.URI(
+      s"http://${serverSocket.getInetAddress.getHostAddress}:${serverSocket.getLocalPort}"
+    )
     assert(ServerLocator.isReachable(uri))
   }
 

@@ -21,10 +21,10 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, Future }
 
 private[xsbt] case class RetResult(
-  destFile: File,
-  artifact: ArtifactDownloadReport,
-  totalSizeDownloaded: Long,
-  copied: Boolean
+    destFile: File,
+    artifact: ArtifactDownloadReport,
+    totalSizeDownloaded: Long,
+    copied: Boolean
 )
 
 object ParallelRetrieveEngine {
@@ -35,10 +35,9 @@ object ParallelRetrieveEngine {
 
 /** Define an ivy [[RetrieveEngine]] that retrieves dependencies in parallel. */
 private[xsbt] class ParallelRetrieveEngine(
-  settings: RetrieveEngineSettings,
-  eventManager: EventManager
-)
-  extends RetrieveEngine(settings, eventManager) {
+    settings: RetrieveEngineSettings,
+    eventManager: EventManager
+) extends RetrieveEngine(settings, eventManager) {
 
   // a port to parallel retrieve from https://github.com/apache/ant-ivy/blob/2.3.0/src/java/org/apache/ivy/core/retrieve/RetrieveEngine.java#L83
   override def retrieve(mrid: ModuleRevisionId, options: RetrieveOptions): RetrieveReport = {
@@ -53,8 +52,12 @@ private[xsbt] class ParallelRetrieveEngine(
     Message.verbose("\tcheckUpToDate=" + settings.isCheckUpToDate())
     val start = System.currentTimeMillis()
 
-    val destFilePattern = IvyPatternHelper.substituteVariables(options.getDestArtifactPattern(), settings.getVariables())
-    val destIvyPattern = IvyPatternHelper.substituteVariables(options.getDestIvyPattern(), settings.getVariables())
+    val destFilePattern = IvyPatternHelper.substituteVariables(
+      options.getDestArtifactPattern(),
+      settings.getVariables()
+    )
+    val destIvyPattern =
+      IvyPatternHelper.substituteVariables(options.getDestIvyPattern(), settings.getVariables())
 
     val confs = getConfs(mrid, options)
     if (LogOptions.LOG_DEFAULT.equals(options.getLog())) {
@@ -123,10 +126,11 @@ private[xsbt] class ParallelRetrieveEngine(
 
       val elapsedTime = System.currentTimeMillis() - start
 
-      val msg2 = if (settings.isCheckUpToDate())
-        (", " + report.getNbrArtifactsUpToDate() + " already retrieved")
-      else
-        ("" + " (" + (totalCopiedSize / ParallelRetrieveEngine.KILO) + "kB/" + elapsedTime + "ms)")
+      val msg2 =
+        if (settings.isCheckUpToDate())
+          (", " + report.getNbrArtifactsUpToDate() + " already retrieved")
+        else
+          ("" + " (" + (totalCopiedSize / ParallelRetrieveEngine.KILO) + "kB/" + elapsedTime + "ms)")
 
       val msg = "\t" + report.getNbrArtifactsCopied() + " artifacts copied" + msg2
 
@@ -137,9 +141,17 @@ private[xsbt] class ParallelRetrieveEngine(
       }
       Message.verbose("\tretrieve done (" + (elapsedTime) + "ms)")
       if (this.eventManager != null) {
-        this.eventManager.fireIvyEvent(new EndRetrieveEvent(mrid, confs, elapsedTime,
-          report.getNbrArtifactsCopied(), report.getNbrArtifactsUpToDate(),
-          totalCopiedSize, options))
+        this.eventManager.fireIvyEvent(
+          new EndRetrieveEvent(
+            mrid,
+            confs,
+            elapsedTime,
+            report.getNbrArtifactsCopied(),
+            report.getNbrArtifactsUpToDate(),
+            totalCopiedSize,
+            options
+          )
+        )
       }
 
       return report
@@ -150,12 +162,12 @@ private[xsbt] class ParallelRetrieveEngine(
   }
 
   def retrieveFile(
-    settings: RetrieveEngineSettings,
-    eventManager: EventManager,
-    artifact: ArtifactDownloadReport,
-    archive: File,
-    path: String,
-    options: RetrieveOptions
+      settings: RetrieveEngineSettings,
+      eventManager: EventManager,
+      artifact: ArtifactDownloadReport,
+      archive: File,
+      path: String,
+      options: RetrieveOptions
   ): RetResult = {
     val destFile = settings.resolveFile(path)
     if (!settings.isCheckUpToDate() || !upToDate(archive, destFile, options)) {
@@ -176,7 +188,9 @@ private[xsbt] class ParallelRetrieveEngine(
         }
         if (!symlinkCreated) {
           // since symlink creation failed, let's attempt to an actual copy instead
-          Message.info("attempting a copy operation (since symlink creation failed) at path " + destFile);
+          Message.info(
+            "attempting a copy operation (since symlink creation failed) at path " + destFile
+          );
           FileUtil.copy(archive, destFile, null, true);
         }
       } else {
@@ -201,7 +215,9 @@ private[xsbt] class ParallelRetrieveEngine(
     if (confs == null || (confs.length == 1 && "*".equals(confs(0)))) {
       try {
         val md = getCache().getResolvedModuleDescriptor(mrid)
-        Message.verbose("no explicit confs given for retrieve, using ivy file: " + md.getResource().getName())
+        Message.verbose(
+          "no explicit confs given for retrieve, using ivy file: " + md.getResource().getName()
+        )
         confs = md.getConfigurationsNames()
         options.setConfs(confs)
       } catch {

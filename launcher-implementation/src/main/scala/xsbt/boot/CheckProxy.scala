@@ -32,7 +32,9 @@ object CheckProxy {
     }
   }
 
-  private def copyEnv(envKey: String, sysKey: String): Unit = { setProperty(sysKey, System.getenv(envKey)) }
+  private def copyEnv(envKey: String, sysKey: String): Unit = {
+    setProperty(sysKey, System.getenv(envKey))
+  }
   private def setProperty(key: String, value: String): Unit = {
     if (value != null) System.setProperty(key, value)
     ()

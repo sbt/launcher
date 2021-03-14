@@ -34,7 +34,9 @@ object Boot {
     def parse(args: List[String], isLocate: Boolean, remaining: List[String]): LauncherArguments =
       args match {
         case "--launcher-version" :: rest =>
-          Console.err.println("sbt launcher version " + Package.getPackage("xsbt.boot").getImplementationVersion)
+          Console.err.println(
+            "sbt launcher version " + Package.getPackage("xsbt.boot").getImplementationVersion
+          )
           exit(0)
         case "--locate" :: rest => parse(rest, true, remaining)
         case next :: rest       => parse(rest, isLocate, next :: remaining)
@@ -50,8 +52,7 @@ object Boot {
     case None          => ()
   }
   private def runImpl(args: LauncherArguments): Option[LauncherArguments] =
-    try
-      Launch(args) map exit
+    try Launch(args) map exit
     catch {
       case b: BootException           => errorAndExit(b.toString)
       case r: xsbti.RetrieveException => errorAndExit(r.getMessage)
