@@ -37,13 +37,15 @@ object ConfigurationParserTest extends verify.BasicTestSuite {
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath]""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[orgPath]", false, false)
+      Repository
+        .Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[orgPath]", false, false)
     )
 
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath], mavenCompatible""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[orgPath]", true, false)
+      Repository
+        .Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[orgPath]", true, false)
     )
 
     repoFileContains(
@@ -61,43 +63,82 @@ object ConfigurationParserTest extends verify.BasicTestSuite {
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath], bootOnly""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[orgPath]", false, true)
+      Repository
+        .Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[orgPath]", false, true)
     )
 
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath], [artPath]""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", false, false)
+      Repository
+        .Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", false, false)
     )
 
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath], [artPath], descriptorOptional""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", false, false, true, false)
+      Repository.Ivy(
+        "id",
+        new URL("https://repo1.maven.org"),
+        "[orgPath]",
+        "[artPath]",
+        false,
+        false,
+        true,
+        false
+      )
     )
 
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath], [artPath], descriptorOptional, skipConsistencyCheck""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", false, false, true, true)
+      Repository.Ivy(
+        "id",
+        new URL("https://repo1.maven.org"),
+        "[orgPath]",
+        "[artPath]",
+        false,
+        false,
+        true,
+        true
+      )
     )
 
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath], [artPath], skipConsistencyCheck, descriptorOptional""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", false, false, true, true)
+      Repository.Ivy(
+        "id",
+        new URL("https://repo1.maven.org"),
+        "[orgPath]",
+        "[artPath]",
+        false,
+        false,
+        true,
+        true
+      )
     )
 
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath], [artPath], skipConsistencyCheck, descriptorOptional, mavenCompatible, bootOnly""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", true, true, true, true)
+      Repository.Ivy(
+        "id",
+        new URL("https://repo1.maven.org"),
+        "[orgPath]",
+        "[artPath]",
+        true,
+        true,
+        true,
+        true
+      )
     )
 
     repoFileContains(
       """|[repositories]
                                           |  id: https://repo1.maven.org, [orgPath], [artPath], bootOnly""".stripMargin,
-      Repository.Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", false, true)
+      Repository
+        .Ivy("id", new URL("https://repo1.maven.org"), "[orgPath]", "[artPath]", false, true)
     )
 
     repoFileContains(
@@ -115,7 +156,15 @@ object ConfigurationParserTest extends verify.BasicTestSuite {
     repoFileContains(
       """|[repositories]
          |  id: http://repo1.maven.org, [orgPath], [artPath], mavenCompatible, bootOnly, allowInsecureProtocol""".stripMargin,
-      Repository.Ivy("id", new URL("http://repo1.maven.org"), "[orgPath]", "[artPath]", mavenCompatible = true, bootOnly = true, allowInsecureProtocol = true)
+      Repository.Ivy(
+        "id",
+        new URL("http://repo1.maven.org"),
+        "[orgPath]",
+        "[artPath]",
+        mavenCompatible = true,
+        bootOnly = true,
+        allowInsecureProtocol = true
+      )
     )
   }
 

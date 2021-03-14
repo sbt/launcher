@@ -12,34 +12,33 @@ object EnumerationTest extends Properties("Enumeration") {
   property("SingleEnum.elements") = checkElements(SingleEnum, singleElements)
 
   def singleElements = ("A", SingleEnum.a)
-  def multiElements =
-    {
-      import MultiEnum.{ a, b, c }
-      List(("A" -> a), ("B" -> b), ("C" -> c))
-    }
+  def multiElements = {
+    import MultiEnum.{ a, b, c }
+    List(("A" -> a), ("B" -> b), ("C" -> c))
+  }
 
-  def checkElements(enum: Enumeration, mapped: (String, Enumeration#Value)*) =
-    {
-      val elements = enum.elements
-      ("elements: " + elements) |:
-        (mapped.forall { case (s, v) => elements.contains(v) } && (elements.length == mapped.length))
-    }
-  def checkToValue(enum: Enumeration, mapped: (String, Enumeration#Value)*) =
-    {
-      def invalid(s: String) =
-        ("valueOf(" + s + ")") |:
-          Prop.throws(classOf[Exception])(enum.toValue(s))
-      def valid(s: String, expected: Enumeration#Value) =
-        ("valueOf(" + s + ")") |:
-          ("Expected " + expected) |:
-          (enum.toValue(s) == expected)
-      val map = Map(mapped: _*)
-      Prop.forAll((s: String) =>
+  def checkElements(enum: Enumeration, mapped: (String, Enumeration#Value)*) = {
+    val elements = enum.elements
+    ("elements: " + elements) |:
+      (mapped.forall { case (s, v) => elements.contains(v) } && (elements.length == mapped.length))
+  }
+  def checkToValue(enum: Enumeration, mapped: (String, Enumeration#Value)*) = {
+    def invalid(s: String) =
+      ("valueOf(" + s + ")") |:
+        Prop.throws(classOf[Exception])(enum.toValue(s))
+    def valid(s: String, expected: Enumeration#Value) =
+      ("valueOf(" + s + ")") |:
+        ("Expected " + expected) |:
+        (enum.toValue(s) == expected)
+    val map = Map(mapped: _*)
+    Prop.forAll(
+      (s: String) =>
         map.get(s) match {
           case Some(v) => valid(s, v)
           case None    => invalid(s)
-        })
-    }
+        }
+    )
+  }
   object MultiEnum extends Enumeration {
     val a = value("A")
     val b = value("B")

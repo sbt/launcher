@@ -11,24 +11,24 @@ final class ArgumentTest extends xsbti.AppMain {
       new Exit(0)
 }
 class AppVersionTest extends xsbti.AppMain {
-  def run(configuration: xsbti.AppConfiguration) =
-    {
-      val expected = configuration.arguments.headOption.getOrElse("")
-      if (configuration.provider.id.version == expected)
-        new Exit(0)
-      else
-        throw new MainException("app version was " + configuration.provider.id.version + ", expected: " + expected)
-    }
+  def run(configuration: xsbti.AppConfiguration) = {
+    val expected = configuration.arguments.headOption.getOrElse("")
+    if (configuration.provider.id.version == expected)
+      new Exit(0)
+    else
+      throw new MainException(
+        "app version was " + configuration.provider.id.version + ", expected: " + expected
+      )
+  }
 }
 class ExtraTest extends xsbti.AppMain {
-  def run(configuration: xsbti.AppConfiguration) =
-    {
-      configuration.arguments.foreach { arg =>
-        if (getClass.getClassLoader.getResource(arg) eq null)
-          throw new MainException("Could not find '" + arg + "'")
-      }
-      new Exit(0)
+  def run(configuration: xsbti.AppConfiguration) = {
+    configuration.arguments.foreach { arg =>
+      if (getClass.getClassLoader.getResource(arg) eq null)
+        throw new MainException("Could not find '" + arg + "'")
     }
+    new Exit(0)
+  }
 }
 class PriorityTest extends xsbti.AppMain {
   def run(configuration: xsbti.AppConfiguration) =

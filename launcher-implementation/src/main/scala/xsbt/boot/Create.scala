@@ -10,12 +10,16 @@ import java.util.{ Locale, Properties }
 import scala.annotation.nowarn
 import scala.collection.immutable.List
 
-
 object Initialize {
   lazy val selectCreate = (_: AppProperty).create
   lazy val selectQuick = (_: AppProperty).quick
   lazy val selectFill = (_: AppProperty).fill
-  def create(file: File, promptCreate: String, enableQuick: Boolean, spec: List[AppProperty]): Unit = {
+  def create(
+      file: File,
+      promptCreate: String,
+      enableQuick: Boolean,
+      spec: List[AppProperty]
+  ): Unit = {
     readLine(promptCreate + " (y/N" + (if (enableQuick) "/s" else "") + ") ") match {
       case None => declined("")
       case Some(line) =>
@@ -32,10 +36,16 @@ object Initialize {
 
   def fill(file: File, spec: List[AppProperty]): Unit = process(file, spec, selectFill)
 
-  def process(file: File, appProperties: List[AppProperty], select: AppProperty => Option[PropertyInit]): Unit = {
+  def process(
+      file: File,
+      appProperties: List[AppProperty],
+      select: AppProperty => Option[PropertyInit]
+  ): Unit = {
     val properties = readProperties(file)
     val uninitialized =
-      for (property <- appProperties; init <- select(property) if properties.getProperty(property.name) == null) yield initialize(properties, property.name, init)
+      for (property <- appProperties; init <- select(property)
+           if properties.getProperty(property.name) == null)
+        yield initialize(properties, property.name, init)
     if (!uninitialized.isEmpty) writeProperties(properties, file, "")
   }
 
@@ -48,7 +58,8 @@ object Initialize {
         readLine(prompt.label + prompt.default.toList.map(" [" + _ + "]").mkString + ": ") match {
           case None => noValue
           case Some(line) =>
-            val value = if (isEmpty(line)) orElse(prompt.default, noValue)
+            val value =
+              if (isEmpty(line)) orElse(prompt.default, noValue)
               else line
             properties.setProperty(name, value)
         }
