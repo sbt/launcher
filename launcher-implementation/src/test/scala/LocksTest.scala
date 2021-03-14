@@ -3,7 +3,7 @@ package xsbt.boot
 import org.scalacheck._
 import Prop._
 import java.io.File
-import sbt.IO.withTemporaryDirectory
+import sbt.io.IO.withTemporaryDirectory
 
 /**
  * These mainly test that things work in the uncontested case and that no OverlappingFileLockExceptions occur.
@@ -41,22 +41,26 @@ object LocksTest extends Properties("Locks") {
     }
   }
 
-  private def spec(f: => Boolean): Prop = Prop { _ => Result(if (f) True else False) }
+  private def spec(f: => Boolean): Prop = Prop { _ =>
+    Result(if (f) True else False)
+  }
 
   private def call[T](impl: => T) = new java.util.concurrent.Callable[T] { def call = impl }
+
   private def callLocked(lockFile: File) = call { Locks(lockFile, callTrue) }
+
   private lazy val callTrue = call { true }
 
   private def forkFold(n: Int)(impl: Int => Boolean): Boolean =
-    (true /: forkWait(n)(impl))(_ && _)
-  private def forkWait(n: Int)(impl: Int => Boolean): Iterable[Boolean] =
-    {
-      import scala.concurrent.Future
-      import scala.concurrent.ExecutionContext.Implicits.global
-      import scala.concurrent.Await
-      import scala.concurrent.duration.Duration.Inf
-      // TODO - Don't wait forever...
-      val futures = (0 until n).map { i => Future { impl(i) } }
-      futures.toList.map(f => Await.result(f, Inf))
-    }
+    forkWait(n)(impl).foldLeft(true) { _ && _ }
+
+  private def forkWait(n: Int)(impl: Int => Boolean): Iterable[Boolean] = {
+    import scala.concurrent.Future
+    import scala.concurrent.ExecutionContext.Implicits.global
+    import scala.concurrent.Await
+    import scala.concurrent.duration.Duration.Inf
+    // TODO - Don't wait forever...
+    val futures = (0 until n).map { i => Future { impl(i) } }
+    futures.toList.map(f => Await.result(f, Inf))
+  }
 }

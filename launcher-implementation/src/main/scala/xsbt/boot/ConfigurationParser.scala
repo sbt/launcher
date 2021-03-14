@@ -5,7 +5,6 @@ package xsbt.boot
 
 import Pre._
 import ConfigurationParser._
-import java.lang.Character.isWhitespace
 import java.io.{ BufferedReader, File, FileInputStream, InputStreamReader, Reader, StringReader }
 import java.net.{ MalformedURLException, URL }
 import java.util.regex.{ Matcher, Pattern }
@@ -260,7 +259,7 @@ class ConfigurationParser {
     {
       type State = (SectionMap, Option[String])
       val s: State =
-        (((ListMap.empty.default(x => ListMap.empty[String, Option[String]]), None): State) /: lines) {
+        lines.foldLeft((ListMap.empty.default(x => ListMap.empty[String, Option[String]]), None): State) {
           case (x, Comment)            => x
           case ((map, _), s: Section)  => (map, Some(s.name))
           case ((_, None), l: Labeled) => Pre.error("label " + l.label + " is not in a section")
@@ -289,7 +288,6 @@ object ParseLine {
       def check(condition: Boolean)(col: Int, msg: String) = if (condition) () else error(col, msg)
 
       val trimmed = trimLeading(content)
-      val offset = content.length - trimmed.length
 
       def section =
         {

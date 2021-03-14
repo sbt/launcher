@@ -2,7 +2,32 @@ import Deps._
 import Util._
 import com.typesafe.tools.mima.core._, ProblemFilters._
 
-version in ThisBuild := "1.1.7-SNAPSHOT"
+lazy val keepFullClasses = settingKey[Seq[String]]("Fully qualified names of classes that proguard should preserve the non-private API of.")
+
+ThisBuild / version     := "1.1.7-SNAPSHOT"
+ThisBuild / description := "Standalone launcher for maven/ivy deployed projects"
+ThisBuild / bintrayPackage := "launcher"
+ThisBuild / scalaVersion := "2.12.13"
+ThisBuild / publishMavenStyle := true
+ThisBuild / crossPaths := false
+ThisBuild / resolvers += Resolver.typesafeIvyRepo("releases")
+ThisBuild / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1")
+
+lazy val root = (project in file("."))
+  .aggregate(launchInterfaceSub, launchSub)
+  .settings(javaOnly ++ Util.commonSettings("launcher") ++ Release.settings)
+  .settings(nocomma {
+    mimaPreviousArtifacts := Set.empty
+    // packageBin in Compile := (LaunchProguard.proguard in LaunchProguard.Proguard).value
+    packageSrc in Compile := (packageSrc in Compile in launchSub).value
+    packageDoc in Compile := (packageDoc in Compile in launchSub).value
+    commands += Command.command("release") { state =>
+      "clean" ::
+      "test" ::
+      "publishSigned" ::
+      state
+    }
+  })
 
 // the launcher is published with metadata so that the scripted plugin can pull it in
 // being proguarded, it shouldn't ever be on a classpath with other jars, however
@@ -14,86 +39,105 @@ def proguardedLauncherSettings = Seq(
 )
 
 def launchSettings =
-    inConfig(Compile)(Transform.configSettings) ++
-    inConfig(Compile)(Transform.transSourceSettings ++ Seq(
-      // TODO - these should be shared between sbt core + sbt-launcher...
-      Transform.inputSourceDirectory := sourceDirectory.value / "input_sources",
-      Transform.sourceProperties := Map("cross.package0" -> "xsbt", "cross.package1" -> "boot")
-    ))
+  inConfig(Compile)(Transform.configSettings) ++
+  inConfig(Compile)(Transform.transSourceSettings ++ Seq(
+    // TODO - these should be shared between sbt core + sbt-launcher...
+    Transform.inputSourceDirectory := sourceDirectory.value / "input_sources",
+    Transform.sourceProperties := Map("cross.package0" -> "xsbt", "cross.package1" -> "boot")
+  ))
 
 // The interface JAR for projects which want to be launched by sbt.
-lazy val launchInterfaceSub =
-  minProject(file("launcher-interface"), "Launcher Interface").settings(javaOnly).settings(
+lazy val launchInterfaceSub = (project in file("launcher-interface"))
+  .settings(javaOnly)
+  .settings(nocomma {
+    name := "Launcher Interface"
     resourceGenerators in Compile += Def.task{
       generateVersionFile("sbt.launcher.version.properties")(version.value, resourceManaged.value, streams.value, (compile in Compile).value)
-    }.taskValue,
-    description := "Interfaces for launching projects with the sbt launcher",
-    mimaPreviousArtifacts := Set(organization.value % moduleName.value % "1.0.1"),
+    }.taskValue
+    description := "Interfaces for launching projects with the sbt launcher"
+    mimaPreviousArtifacts := Set(organization.value % moduleName.value % "1.0.1")
     mimaBinaryIssueFilters ++= Seq(
       exclude[ReversedMissingMethodProblem]("xsbti.MavenRepository.allowInsecureProtocol"),
       exclude[ReversedMissingMethodProblem]("xsbti.IvyRepository.allowInsecureProtocol")
     )
-  ).settings(Release.settings)
+    exportJars := true
+  })
+  .settings(Release.settings)
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
 // TODO - move into a directory called "launcher-impl or something."
-lazy val launchSub = noPublish(baseProject(file("launcher-implementation"), "Launcher Implementation")).
-  dependsOn(launchInterfaceSub).
-  settings(launchSettings).
-  settings(
+lazy val launchSub = (project in file("launcher-implementation"))
+  .enablePlugins(SbtProguard)
+  .dependsOn(launchInterfaceSub)
+  .settings(Util.base)
+  .settings(launchSettings)
+  .settings(nocomma {
+    name := "Launcher Implementation"
+    publish / skip := true
+    exportJars := true
     libraryDependencies ++= Seq(
       ivy,
-      sbtIo.value % "test->test",
-      sbtCompileInterface.value % "test",
-      Deps.scalacheck % "test",
-      Deps.specs2 % "test",
-      Deps.junit % "test"
-    ),
-    compile in Test := {
-      val ignore = (publishLocal in testSamples).value
-      val ignore2 = (publishLocal in launchInterfaceSub).value
+      verify % Test,
+      sbtIo % Test,
+      scalacheck % Test,
+      junit % Test,
+    )
+    testFrameworks += new TestFramework("verify.runner.Framework")
+    Test / compile := {
+      val ignore = (testSamples / publishLocal).value
+      val ignore2 = (launchInterfaceSub / publishLocal).value
       (compile in Test).value
     }
-    // TODO: Configure MiMa, deal with Proguard
-  )
+    Proguard / proguardOptions ++= Seq(
+      "-keep,allowoptimization,allowshrinking class * { *; }", // no obfuscation
+      "-keepattributes SourceFile,LineNumberTable", // preserve debugging information
+      "-dontnote",
+      "-dontwarn",
+      "-ignorewarnings")
+
+    keepFullClasses := "xsbti.**" :: Nil
+    Proguard / proguardOptions ++= keepFullClasses.value map ("-keep public class " + _ + " {\n\tpublic protected * ;\n}")
+    Proguard / proguardInputFilter := { file =>
+      file.name match {
+        case x if x.startsWith("scala-library") => Some(libraryFilter)
+        case x if x.startsWith("ivy-2.3.0")     => Some(ivyFilter)
+        case x if x.startsWith("launcher-implementation") => None
+        case _                                  => Some(generalFilter)
+      }
+    }
+    Proguard / proguardOptions += ProguardOptions.keepMain("xsbt.boot.Boot")
+    mimaPreviousArtifacts := Set.empty
+  })
+
+def generalFilter = "!META-INF/**,!*.properties"
+
+def libraryFilter = "!META-INF/**,!*.properties,!scala/util/parsing/**,**.class"
+
+def ivyFilter = {
+  def excludeString(s: List[String]) = s.map("!" + _).mkString(",")
+  val ivyResources =
+    "META-INF/**" ::
+      "fr/**" ::
+      "**/antlib.xml" ::
+      "**/*.png" ::
+      "org/apache/ivy/core/settings/ivyconf*.xml" ::
+      "org/apache/ivy/core/settings/ivysettings-*.xml" ::
+      "org/apache/ivy/plugins/resolver/packager/*" ::
+      "**/ivy_vfs.xml" ::
+      "org/apache/ivy/plugins/report/ivy-report-*" ::
+      "org/apache/ivy/ant/**" ::
+      Nil
+  excludeString(ivyResources)
+}
+
 
 // used to test the retrieving and loading of an application: sample app is packaged and published to the local repository
-lazy val testSamples = noPublish(baseProject(file("test-sample"), "Launch Test")) dependsOn (launchInterfaceSub) settings(
-  libraryDependencies ++=
-    Seq(
-      sbtCompileInterface.value,
-      scalaCompiler.value
-    )
-)
-
-def sbtBuildSettings = Seq(
-  bintrayPackage := "launcher",
-  publishArtifact in packageDoc := true,
-  scalaVersion := "2.10.7",
-  publishMavenStyle := true,
-  crossPaths := false,
-  resolvers += Resolver.typesafeIvyRepo("releases"),
-  testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1"),
-  javacOptions in compile ++= Seq("-target", "6", "-source", "6", "-Xlint", "-Xlint:-serial"),
-  incOptions := incOptions.value.withNameHashing(true)
-)
-
-// Configuration for the launcher root project (the proguarded launcher)
-Project.inScope(Scope.GlobalScope in ThisBuild)(sbtBuildSettings)
-LaunchProguard.settings
-LaunchProguard.specific(launchSub)
-javaOnly
-packageBin in Compile := (LaunchProguard.proguard in LaunchProguard.Proguard).value
-packageSrc in Compile := (packageSrc in Compile in launchSub).value
-packageDoc in Compile := (packageDoc in Compile in launchSub).value
-Util.commonSettings("launcher")
-Release.settings
-description := "Standalone launcher for maven/ivy deployed projects."
-configs(LaunchProguard.Proguard)
-
-commands += Command.command("release") { state =>
-  "clean" ::
-  "test" ::
-  "publishSigned" ::
-  state
-}
+lazy val testSamples = (project in file("test-sample"))
+  .dependsOn(launchInterfaceSub)
+  .settings(Release.javaVersionCheckSettings)
+  .settings(nocomma {
+    name := "Launch Test"
+    publish := { () }
+    publishSigned := { () }
+    libraryDependencies += scalaCompiler.value
+  })

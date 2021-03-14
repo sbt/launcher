@@ -4,7 +4,7 @@
 package xsbt.boot
 
 import Pre._
-import scala.collection.{ Iterable, Iterator }
+import scala.collection.Iterable
 import scala.collection.immutable.List
 
 // preserves iteration order

@@ -12,7 +12,7 @@ import java.io.File
 //
 // see also ProjectProperties for the set of constants that apply to the build.properties file in a project
 // The scala organization is used as a prefix in baseDirectoryName when a non-standard organization is used.
-private object BootConfiguration {
+private[boot] object BootConfiguration {
   // these are the Scala module identifiers to resolve/retrieve
   val ScalaOrg = "org.scala-lang"
   val CompilerModuleName = "scala-compiler"
@@ -97,7 +97,8 @@ private object BootConfiguration {
         None
     }
 }
-private final class ProxyProperties(
+
+private[boot] final class ProxyProperties(
   val envURL: String,
   val envUser: String,
   val envPassword: String,
@@ -106,7 +107,8 @@ private final class ProxyProperties(
   val sysUser: String,
   val sysPassword: String
 )
-private object ProxyProperties {
+
+private[boot] object ProxyProperties {
   val http = apply("http")
   val https = apply("https")
   val ftp = apply("ftp")

@@ -33,7 +33,10 @@ object CheckProxy {
   }
 
   private def copyEnv(envKey: String, sysKey: String): Unit = { setProperty(sysKey, System.getenv(envKey)) }
-  private def setProperty(key: String, value: String): Unit = { if (value != null) System.setProperty(key, value) }
+  private def setProperty(key: String, value: String): Unit = {
+    if (value != null) System.setProperty(key, value)
+    ()
+  }
   private def isPropertyDefined(k: String) = isDefined(System.getProperty(k))
   private def isDefined(s: String) = s != null && isNonEmpty(s)
 }

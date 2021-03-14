@@ -1,20 +1,19 @@
 import sbt._
 import Keys._
+import sbt.internal.inc.Analysis
+import xsbti.compile.CompileAnalysis
 
 object Util {
   val publishSigned = TaskKey[Unit]("publish-signed", "Publishing all artifacts, but SIGNED using PGP.")
 
-  def noPublish(p: Project) = p.settings(noRemotePublish:_*)
-  def noRemotePublish: Seq[Setting[_]] =
-    // TODO - publishSigned
-    Seq(publish := (), publishSigned := ())
   def commonSettings(nameString: String) = Seq(
     name := nameString,
     resolvers += Resolver.typesafeIvyRepo("releases"),
     publishMavenStyle := true
   )
 
-  def minProject(path: File, nameString: String) = Project(Project.normalizeModuleID(nameString), path) settings (commonSettings(nameString) ++ Release.javaVersionCheckSettings: _*)
+  def minProject(path: File, nameString: String) = Project(Project.normalizeModuleID(nameString), path)
+    .settings(commonSettings(nameString) ++ Release.javaVersionCheckSettings: _*)
   def baseProject(path: File, nameString: String) = minProject(path, nameString) settings (base: _*)
 
   /** Configures a project to be java only. */
@@ -38,14 +37,15 @@ object Util {
   lazy val minimalSettings: Seq[Setting[_]] = Defaults.paths ++ Seq[Setting[_]](crossTarget := target.value, name := thisProject(_.id).value)
 
 
-  def lastCompilationTime(analysis: sbt.inc.Analysis): Long =
+  def lastCompilationTime(analysis: Analysis): Long =
     {
       val lastCompilation = analysis.compilations.allCompilations.lastOption
-      lastCompilation.map(_.startTime) getOrElse 0L
+      lastCompilation.map(_.getStartTime) getOrElse 0L
     }
-  def generateVersionFile(fileName: String)(version: String, dir: File, s: TaskStreams, analysis: sbt.inc.Analysis): Seq[File] =
+  def generateVersionFile(fileName: String)(version: String, dir: File, s: TaskStreams, a0: CompileAnalysis): Seq[File] =
     {
       import java.util.{ Date, TimeZone }
+      val analysis = a0 match { case a: Analysis => a }
       val formatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
       formatter.setTimeZone(TimeZone.getTimeZone("GMT"))
       val timestamp = formatter.format(new Date)
@@ -60,6 +60,7 @@ object Util {
   def versionLine(version: String): String = "version=" + version
   def containsVersion(propFile: File, version: String): Boolean = IO.read(propFile).contains(versionLine(version))
 }
+
 object Licensed {
   lazy val notice = SettingKey[File]("notice")
   lazy val extractLicenses = TaskKey[Seq[File]]("extract-licenses")

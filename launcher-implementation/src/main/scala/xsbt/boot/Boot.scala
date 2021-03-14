@@ -3,8 +3,6 @@
  */
 package xsbt.boot
 
-import java.io.File
-
 // The entry point to the launcher
 object Boot {
   def main(args: Array[String]): Unit = {

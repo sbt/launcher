@@ -1,53 +1,63 @@
 package xsbt.boot
 
 import java.io.{ File, InputStream }
-import java.net.URL
 import java.util.Properties
 import xsbti._
-import org.specs2._
-import mutable.Specification
 import LaunchTest._
-import sbt.IO.{ createDirectory, touch, withTemporaryDirectory }
+import sbt.io.IO.{ createDirectory, touch, withTemporaryDirectory }
 
-object ScalaProviderTest extends Specification {
-  "Launch" should {
-    //"provide ClassLoader for Scala 2.8.0" in { checkScalaLoader("2.8.0") }
-    "provide ClassLoader for Scala 2.8.2" in { checkScalaLoader("2.8.2") }
-    "provide ClassLoader for Scala 2.9.0" in { checkScalaLoader("2.9.0") }
-    "provide ClassLoader for Scala 2.9.2" in { checkScalaLoader("2.9.2") }
-    "provide ClassLoader for Scala 2.10.7" in { checkScalaLoader("2.10.7") }
-    "provide ClassLoader for Scala 2.11.12" in { checkScalaLoader("2.11.12") }
-    // This requires the test to run in JDK 8
-    // "provide ClassLoader for Scala 2.12.4" in { checkScalaLoader("2.12.4") }
+object ScalaProviderTest extends verify.BasicTestSuite {
+  test("Launch should provide ClassLoader for Scala 2.8.2") {
+    checkScalaLoader("2.8.2")
   }
 
-  "Launch" should {
-    "Successfully load an application from local repository and run it with correct arguments" in {
-      checkLoad(List("test"), "xsbt.boot.test.ArgumentTest").asInstanceOf[Exit].code must equalTo(0)
-      checkLoad(List(), "xsbt.boot.test.ArgumentTest") must throwA[RuntimeException]
-    }
-    "Successfully load an plain application from local repository and run it with correct arguments" in {
-      checkLoad(List("test"), "xsbt.boot.test.PlainArgumentTest").asInstanceOf[Exit].code must equalTo(0)
-      checkLoad(List(), "xsbt.boot.test.PlainArgumentTest") must throwA[RuntimeException]
-    }
-    "Successfully load an plain application with int return from local repository and run it with correct arguments" in {
-      checkLoad(List("test"), "xsbt.boot.test.PlainArgumentTestWithReturn").asInstanceOf[Exit].code must equalTo(0)
-      checkLoad(List(), "xsbt.boot.test.PlainArgumentTestWithReturn").asInstanceOf[Exit].code must equalTo(1)
-    }
-    "Successfully load an application instead of the plain application" in {
-      checkLoad(List(), "xsbt.boot.test.PriorityTest").asInstanceOf[Exit].code must equalTo(0)
-    }
-    "Successfully load an application from local repository and run it with correct sbt version" in {
-      checkLoad(List(AppVersion), "xsbt.boot.test.AppVersionTest").asInstanceOf[Exit].code must equalTo(0)
-    }
-    "Add extra resources to the classpath" in {
-      checkLoad(testResources, "xsbt.boot.test.ExtraTest", createExtra).asInstanceOf[Exit].code must equalTo(0)
-    }
+  test("Launch should provide ClassLoader for Scala 2.9.0") {
+    checkScalaLoader("2.9.0")
+  }
 
+  test("Launch should provide ClassLoader for Scala 2.9.2") {
+    checkScalaLoader("2.9.2")
+  }
+
+  test("Launch should provide ClassLoader for Scala 2.10.7") {
+    checkScalaLoader("2.10.7")
+  }
+
+  test("Launch should provide ClassLoader for Scala 2.11.12") {
+    checkScalaLoader("2.11.12")
+  }
+
+  test("Launch should successfully load an application from local repository and run it with correct arguments") {
+    assert(checkLoad(List("test"), "xsbt.boot.test.ArgumentTest").asInstanceOf[Exit].code == 0)
+    intercept[RuntimeException] {
+      checkLoad(List(), "xsbt.boot.test.ArgumentTest")
+      ()
+    }
+  }
+
+  test("Launch should successfully load an plain application from local repository and run it with correct arguments") {
+    assert(checkLoad(List("test"), "xsbt.boot.test.PlainArgumentTest").asInstanceOf[Exit].code == 0)
+    intercept[RuntimeException] {
+      checkLoad(List(), "xsbt.boot.test.PlainArgumentTest")
+      ()
+    }
+  }
+
+  test("Launch should successfully load an application instead of the plain application") {
+    assert(checkLoad(List(), "xsbt.boot.test.PriorityTest").asInstanceOf[Exit].code == 0)
+  }
+
+  test("Launch should successfully load an application from local repository and run it with correct sbt version") {
+    assert(checkLoad(List(AppVersion), "xsbt.boot.test.AppVersionTest").asInstanceOf[Exit].code == 0)
+  }
+
+  test("Launch should add extra resources to the classpath") {
+    assert(checkLoad(testResources, "xsbt.boot.test.ExtraTest", createExtra).asInstanceOf[Exit].code == 0)
   }
 
   def checkLoad(arguments: List[String], mainClassName: String): MainResult =
     checkLoad(arguments, mainClassName, _ => Array[File]())
+
   def checkLoad(arguments: List[String], mainClassName: String, extra: File => Array[File]): MainResult =
     withTemporaryDirectory { currentDirectory =>
       withLauncher { launcher =>
@@ -56,7 +66,9 @@ object ScalaProviderTest extends Specification {
         )
       }
     }
+
   private def testResources = List("test-resourceA", "a/b/test-resourceB", "sub/test-resource")
+
   private def createExtra(currentDirectory: File) =
     {
       val resourceDirectory = new File(currentDirectory, "resources")
@@ -64,27 +76,32 @@ object ScalaProviderTest extends Specification {
       testResources.foreach(resource => touch(new File(resourceDirectory, resource.replace('/', File.separatorChar))))
       Array(resourceDirectory)
     }
-  private def checkScalaLoader(version: String) = withLauncher(checkLauncher(version, mapScalaVersion(version)))
-  private def checkLauncher(version: String, versionValue: String)(launcher: Launcher) =
-    {
-      val provider = launcher.getScala(version)
-      val loader = provider.loader
-      // ensure that this loader can load Scala classes by trying scala.ScalaObject.
-      tryScala(loader, loader.getParent)
-      getScalaVersion(loader) must beEqualTo(versionValue)
 
-      val libraryLoader = provider.loader.getParent
-      // Test the structural type
-      libraryLoader match {
-        case x: ClassLoader with LibraryLoader => x.scalaVersion must be(version)
-      }
-      tryScala(libraryLoader, libraryLoader)
+  private def checkScalaLoader(version: String) = withLauncher(checkLauncher(version, mapScalaVersion(version)))
+
+  private def checkLauncher(version: String, versionValue: String)(launcher: Launcher) = {
+    import scala.language.reflectiveCalls
+    val provider = launcher.getScala(version)
+    val loader = provider.loader
+    // ensure that this loader can load Scala classes by trying scala.ScalaObject.
+    tryScala(loader, loader.getParent)
+    assert(getScalaVersion(loader) == versionValue)
+
+    val libraryLoader = provider.loader.getParent
+    // Test the structural type
+    libraryLoader match {
+      case x: ClassLoader with LibraryLoader @unchecked =>
+        assert(x.scalaVersion == version)
     }
+    tryScala(libraryLoader, libraryLoader)
+  }
+
   private def tryScala(loader: ClassLoader, libraryLoader: ClassLoader) =
-    Class.forName("scala.Product", false, loader).getClassLoader must be(libraryLoader)
+    assert(Class.forName("scala.Product", false, loader).getClassLoader == libraryLoader)
 
   type LibraryLoader = { def scalaVersion: String }
 }
+
 object LaunchTest {
   def testApp(main: String): Application = testApp(main, Array[File]())
   def testApp(main: String, extra: Array[File]): Application = Application("org.scala-sbt", new Explicit("launch-test"), new Explicit(AppVersion), main, Nil, CrossValue.Disabled, extra)
