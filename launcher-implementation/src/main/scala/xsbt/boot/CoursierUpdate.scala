@@ -2,18 +2,21 @@ package xsbt.boot
 
 import Pre._
 import coursier._
-import coursier.core.Publication
+import coursier.cache.FileCache
+import coursier.core.{ Publication, Repository }
+import coursier.credentials.DirectCredentials
+import coursier.ivy.IvyRepository
+import coursier.maven.MavenRepository
 import java.io.{ File, FileWriter, PrintWriter }
-import java.nio.file.{ Files, StandardCopyOption }
+import java.nio.file.{ Files, StandardCopyOption, Paths }
+import java.util.Properties
 import BootConfiguration._
 
 class CousierUpdate(config: UpdateConfiguration) {
   import config.{
     bootDirectory,
-    //   checksums,
     getScalaVersion,
-    //   ivyHome,
-    //   repositories,
+    repositories,
     resolutionCacheBase,
     scalaVersion,
     scalaOrg,
@@ -21,6 +24,14 @@ class CousierUpdate(config: UpdateConfiguration) {
 
   private def logFile = new File(bootDirectory, UpdateLogName)
   private val logWriter = new PrintWriter(new FileWriter(logFile))
+  private lazy val coursierCache = {
+    val credentials = bootCredentials
+    val cache = credentials.foldLeft(FileCache()) { _.addCredentials(_) }
+    cache
+  }
+  private lazy val coursierRepos: Seq[Repository] =
+    if (repositories.isEmpty) Resolve.defaultRepositories
+    else Nil
 
   def apply(target: UpdateTarget, reason: String): UpdateResult = {
     try {
@@ -96,6 +107,7 @@ class CousierUpdate(config: UpdateConfiguration) {
       deps: List[Dependency]
   ): UpdateResult = {
     val r: Resolution = Resolve()
+      .withCache(coursierCache)
       .addDependencies(deps: _*)
       .run()
     val actualScalaVersion =
@@ -121,6 +133,7 @@ class CousierUpdate(config: UpdateConfiguration) {
       Files.createDirectories(retrieveDir.toPath)
     }
     val downloadedJars = Fetch()
+      .withCache(coursierCache)
       .addDependencies(deps: _*)
       .run()
     downloadedJars foreach { downloaded =>
@@ -135,6 +148,123 @@ class CousierUpdate(config: UpdateConfiguration) {
   def withPublication(d: Dependency, classifiers: List[String]): List[Dependency] =
     if (classifiers.isEmpty) List(d)
     else classifiers.map(c => d.withPublication(Publication.empty.withClassifier(Classifier(c))))
+
+  def bootCredentials = {
+    val optionProps =
+      Option(System.getProperty("sbt.boot.credentials")) orElse
+        Option(System.getenv("SBT_CREDENTIALS")) map (
+          path => Pre.readProperties(new File(substituteTilde(path)))
+      )
+    def extractCredentials(
+        keys: (String, String, String, String)
+    )(props: Properties): Option[DirectCredentials] = {
+      val List(realm, host, user, password) =
+        keys.productIterator.map(key => props.getProperty(key.toString)).toList
+      if (host != null && user != null && password != null)
+        Some(
+          DirectCredentials()
+            .withHost(host)
+            .withUsername(user)
+            .withPassword(password)
+            .withRealm(Option(realm).filter(_.nonEmpty))
+            .withHttpsOnly(false)
+            .withMatchHost(true)
+        )
+      else None
+    }
+    (optionProps match {
+      case Some(props) => extractCredentials(("realm", "host", "user", "password"))(props)
+      case None        => None
+    }).toList :::
+      (extractCredentials(
+        ("sbt.boot.realm", "sbt.boot.host", "sbt.boot.user", "sbt.boot.password")
+      )(
+        System.getProperties
+      )).toList
+  }
+
+  def toCoursierRepository(repo: xsbti.Repository): Repository = {
+    import xsbti.Predefined._
+    repo match {
+      case m: xsbti.MavenRepository =>
+        mavenRepository(m.url.toString)
+      case i: xsbti.IvyRepository =>
+        ivyRepository(
+          i.id,
+          i.url.toString,
+          i.ivyPattern,
+          i.artifactPattern,
+          i.mavenCompatible,
+          i.descriptorOptional,
+          i.skipConsistencyCheck,
+          i.allowInsecureProtocol
+        )
+      case p: xsbti.PredefinedRepository =>
+        p.id match {
+          case Local =>
+            localRepository
+          case MavenLocal =>
+            val localDir = new File(new File(new File(sys.props("user.home")), ".m2"), "repository")
+            mavenRepository(localDir.toPath.toUri.toString)
+          case MavenCentral =>
+            Repositories.central
+          case SonatypeOSSReleases =>
+            Repositories.sonatype("releases")
+          case SonatypeOSSSnapshots =>
+            Repositories.sonatype("snapshots")
+          case Jcenter =>
+            Repositories.jcenter
+        }
+    }
+  }
+
+  private def mavenRepository(root0: String): MavenRepository = {
+    val root = if (root0.endsWith("/")) root0 else root0 + "/"
+    MavenRepository(root)
+  }
+
+  /** Uses the pattern defined in BuildConfiguration to download sbt from Google code.*/
+  private def ivyRepository(
+      id: String,
+      base: String,
+      ivyPattern: String,
+      artifactPattern: String,
+      mavenCompatible: Boolean,
+      descriptorOptional: Boolean,
+      skipConsistencyCheck: Boolean,
+      allowInsecureProtocol: Boolean
+  ): IvyRepository =
+    IvyRepository
+      .parse(
+        pathToUriString(base + artifactPattern),
+        Some(pathToUriString(base + ivyPattern)),
+      )
+      .right
+      .get
+
+  private def localRepository: IvyRepository = {
+    val localDir = new File(new File(new File(sys.props("user.home")), ".ivy2"), "local")
+    val root0 = localDir.toPath.toUri.toASCIIString
+    val root = if (root0.endsWith("/")) root0 else root0 + "/"
+    IvyRepository
+      .parse(
+        root + LocalArtifactPattern,
+        Some(root + LocalIvyPattern)
+      )
+      .right
+      .get
+  }
+
+  private def pathToUriString(path: String): String = {
+    val stopAtIdx = path.indexWhere(c => c == '[' || c == '$' || c == '(')
+    if (stopAtIdx > 0) {
+      val (pathPart, patternPart) = path.splitAt(stopAtIdx)
+      Paths.get(pathPart).toUri.toASCIIString + patternPart
+    } else if (stopAtIdx == 0)
+      "file://" + path
+    else
+      Paths.get(path).toUri.toASCIIString
+  }
 
   /** Logs the given message to a file and to the console. */
   private def log(msg: String) = {
