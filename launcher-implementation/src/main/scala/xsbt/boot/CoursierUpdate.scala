@@ -125,6 +125,10 @@ class CousierUpdate(config: UpdateConfiguration) {
           appDirectoryName(u.id.toID, File.separator)
         )
     }
+    val isScala = target match {
+      case _: UpdateScala => true
+      case _: UpdateApp   => false
+    }
     val depVersion: Option[String] = target match {
       case u: UpdateScala => scalaVersion
       case u: UpdateApp   => Some(Value.get(u.id.version))
@@ -137,8 +141,16 @@ class CousierUpdate(config: UpdateConfiguration) {
       .addDependencies(deps: _*)
       .run()
     downloadedJars foreach { downloaded =>
-      val t = new File(retrieveDir, downloaded.getName)
-      println(t.toString)
+      val t =
+        if (isScala) {
+          val name = downloaded.getName match {
+            case n if n.startsWith("scala-compiler") => "scala-compiler.jar"
+            case n if n.startsWith("scala-library")  => "scala-library.jar"
+            case n if n.startsWith("scala-reflect")  => "scala-reflect.jar"
+            case n                                   => n
+          }
+          new File(retrieveDir, name)
+        } else new File(retrieveDir, downloaded.getName)
       Files.copy(downloaded.toPath, t.toPath, StandardCopyOption.REPLACE_EXISTING)
       ()
     }
