@@ -140,13 +140,20 @@ final class Update(config: UpdateConfiguration) {
   }
   // should be the same file as is used in the Ivy module
   private lazy val ivyLockFile = new File(settings.getDefaultIvyUserDir, ".sbt.ivy.lock")
+  lazy val coursierUpdate = new CousierUpdate(config)
 
   /** The main entry point of this class for use by the Update module.  It runs Ivy */
   def apply(target: UpdateTarget, reason: String): UpdateResult = {
-    Message.setDefaultLogger(new SbtIvyLogger(logWriter))
-    val action = new Callable[UpdateResult] { def call = lockedApply(target, reason) }
-    Locks(ivyLockFile, action)
+    val x = System.getProperty("sbt.launcher.coursier")
+    val useCousier = x == null || x == "true" || x == "1"
+    if (useCousier) coursierUpdate(target, reason)
+    else {
+      Message.setDefaultLogger(new SbtIvyLogger(logWriter))
+      val action = new Callable[UpdateResult] { def call = lockedApply(target, reason) }
+      Locks(ivyLockFile, action)
+    }
   }
+
   private def lockedApply(target: UpdateTarget, reason: String): UpdateResult = {
     ivy.pushContext()
     try {

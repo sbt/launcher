@@ -84,6 +84,7 @@ lazy val launchSub = (project in file("launcher-implementation"))
     exportJars := true
     libraryDependencies ++= Seq(
       ivy,
+      coursier,
       verify % Test,
       sbtIo % Test,
       scalacheck % Test,
