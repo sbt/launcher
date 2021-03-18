@@ -46,6 +46,17 @@ private[boot] object BootConfiguration {
   /** The class name prefix used to hide the Ivy classes used by this loader from the application*/
   final val IvyPackage = "org.apache.ivy."
 
+  /** The class name prefixes used to hide Coursier and its dependencies from the application */
+  final val CoursierPackages = Array(
+    "coursier",
+    "shapeless",
+    "argonaut",
+    "org.fusesource",
+    "macrocompat",
+    "io.github.alexarchambault.windowsansi",
+    "concurrentrefhashmap"
+  )
+
   /**
    * The class name prefix used to hide the launcher classes from the application.
    * Note that access to xsbti classes are allowed.
