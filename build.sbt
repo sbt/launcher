@@ -21,6 +21,7 @@ ThisBuild / scalafmtOnCompile := !(Global / insideCI).value
 ThisBuild / Test / scalafmtOnCompile := !(Global / insideCI).value
 
 lazy val root = (project in file("."))
+  .enablePlugins(ShadingPlugin)
   .aggregate(launchInterfaceSub, launchSub)
   .settings(javaOnly ++ Util.commonSettings("launcher") ++ Release.settings)
   .settings(nocomma {
@@ -33,6 +34,14 @@ lazy val root = (project in file("."))
       "test" ::
       "publishSigned" ::
       state
+    }
+    validNamespaces ++= Set("xsbt", "xsbti", "scala", "org.apache.ivy")
+    validEntries ++= Set("LICENSE", "NOTICE", "module.properties")
+    shadingRules ++= {
+      Seq(
+        "coursier",
+        "concurrentrefhashmap"
+      ).map(ShadingRule.moveUnder(_, "xsbt.boot.internal.shaded"))
     }
   })
 
