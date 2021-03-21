@@ -338,11 +338,9 @@ class Launch private[xsbt] (
       else
         existing(app, ScalaOrg, explicitScalaVersion, baseDirs(None)) getOrElse retrieve()
 
-    case class TestInterfaceLoader(jar: File, parent: ClassLoader)
-        extends URLClassLoader(Array(jar.toURI.toURL), topLoader)
     val testInterface = java.util.regex.Pattern.compile("test-interface-[0-9.]+\\.jar")
     retrievedApp.fullClasspath.find(f => testInterface.matcher(f.getName).find()).foreach { f =>
-      scalaProviderClassLoader.set(TestInterfaceLoader(f, initLoader))
+      scalaProviderClassLoader.set(new TestInterfaceLoader(f, initLoader, topLoader))
     }
     // https://github.com/sbt/sbt/issues/4955
     // When sbt core artifacts are not properly downloaded, this the point that fails with "No Scala version specified or detected"
@@ -570,6 +568,13 @@ object Launcher {
     launcher.app(config.app.toID, orNull(config.getScalaVersion))
   }
 }
+
+// Do not change this without testing sbt 1.3.13
+// https://github.com/sbt/sbt/blob/v1.3.13/main/src/main/scala/sbt/internal/XMainConfiguration.scala#L32-L33
+// https://github.com/sbt/sbt/issues/6405
+private[boot] class TestInterfaceLoader(jar: File, parent: ClassLoader, topLoader: ClassLoader)
+    extends URLClassLoader(Array(jar.toURI.toURL), topLoader)
+
 class ComponentProvider(baseDirectory: File, lockBoot: Boolean) extends xsbti.ComponentProvider {
   def componentLocation(id: String): File = new File(baseDirectory, id)
   def component(id: String) = wrapNull(componentLocation(id).listFiles).filter(_.isFile)
