@@ -27,7 +27,7 @@ jobs:
       uses: coursier/cache-action@v6
     - name: Build and test
       run: |
-        sbt -v "mimaReportBinaryIssues; scalafmtCheckAll; packageBin; test;"
+        sbt -v "mimaReportBinaryIssues; scalafmtCheckAll; shadedPackageBin; test;"
         ci-test/test.sh
         rm -rf "$HOME/.ivy2/local" || true
         find $HOME/Library/Caches/Coursier/v1        -name "ivydata-*.properties" -delete || true

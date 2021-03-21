@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
       "publishSigned" ::
       state
     }
-    validNamespaces ++= Set("xsbt", "xsbti", "scala", "org.apache.ivy")
+    validNamespaces ++= Set("xsbt", "xsbti", "scala", "org.apache.ivy", "org.fusesource.jansi")
     validEntries ++= Set("LICENSE", "NOTICE", "module.properties")
     shadingRules ++= {
       Seq(
