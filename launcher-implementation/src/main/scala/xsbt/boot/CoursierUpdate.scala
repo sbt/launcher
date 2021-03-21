@@ -106,9 +106,11 @@ class CousierUpdate(config: UpdateConfiguration) {
       target: UpdateTarget,
       deps: List[Dependency]
   ): UpdateResult = {
+    val repos = config.repositories.map(toCoursierRepository)
     val r: Resolution = Resolve()
       .withCache(coursierCache)
       .addDependencies(deps: _*)
+      .withRepositories(repos)
       .run()
     val actualScalaVersion =
       (r.dependencySet.set collect {
@@ -139,6 +141,7 @@ class CousierUpdate(config: UpdateConfiguration) {
     val downloadedJars = Fetch()
       .withCache(coursierCache)
       .addDependencies(deps: _*)
+      .withRepositories(repos)
       .run()
     downloadedJars foreach { downloaded =>
       val t =
@@ -248,8 +251,8 @@ class CousierUpdate(config: UpdateConfiguration) {
   ): IvyRepository =
     IvyRepository
       .parse(
-        pathToUriString(base + artifactPattern),
-        Some(pathToUriString(base + ivyPattern)),
+        base + artifactPattern,
+        Some(base + ivyPattern),
       )
       .right
       .get
