@@ -10,6 +10,7 @@ import coursier.maven.MavenRepository
 import java.io.{ File, FileWriter, PrintWriter }
 import java.nio.file.{ Files, StandardCopyOption, Paths }
 import java.util.Properties
+import java.util.regex.Pattern
 import BootConfiguration._
 
 class CousierUpdate(config: UpdateConfiguration) {
@@ -153,7 +154,19 @@ class CousierUpdate(config: UpdateConfiguration) {
             case n                                   => n
           }
           new File(retrieveDir, name)
-        } else new File(retrieveDir, downloaded.getName)
+        } else {
+          val name = downloaded.getName match {
+            // https://github.com/sbt/sbt/issues/6432
+            // sbt expects test-interface JAR to be called test-interface-1.0.jar with
+            // version number, but sometimes it doesn't have it.
+            case "test-interface.jar" =>
+              if (Pattern.matches("""[0-9.]+""", downloaded.getParentFile.getName))
+                "test-interface-" + downloaded.getParentFile.getName + ".jar"
+              else "test-interface-0.0.jar"
+            case n => n
+          }
+          new File(retrieveDir, name)
+        }
       Files.copy(downloaded.toPath, t.toPath, StandardCopyOption.REPLACE_EXISTING)
       ()
     }
