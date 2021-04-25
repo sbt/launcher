@@ -144,8 +144,20 @@ final class Update(config: UpdateConfiguration) {
 
   /** The main entry point of this class for use by the Update module.  It runs Ivy */
   def apply(target: UpdateTarget, reason: String): UpdateResult = {
-    val x = System.getProperty("sbt.launcher.coursier")
-    val useCousier = x == null || x == "true" || x == "1"
+    val x = Option(System.getProperty("sbt.launcher.coursier"))
+    val useCousier = x match {
+      case Some("true") | Some("1") => true
+      case Some(_)                  => false
+      case None =>
+        target match {
+          // https://github.com/sbt/sbt/issues/6447
+          case u: UpdateApp
+              if u.id.groupID == "org.scala-sbt" &&
+                u.id.getName == "sbt" && u.id.getVersion.startsWith("0.") =>
+            false
+          case _ => true
+        }
+    }
     if (useCousier) coursierUpdate(target, reason)
     else {
       Message.setDefaultLogger(new SbtIvyLogger(logWriter))
