@@ -6,7 +6,10 @@ pushd ci-test/app0
 COURSIER_CACHE=/tmp/cache/ java -jar $LAUNCHER @sbt.1.3.13.boot.properties exit
 popd
 
-#!/bin/bash -e
 pushd ci-test/app1
 COURSIER_CACHE=/tmp/cache/ java -jar $LAUNCHER @sbt.0.13.18.boot.properties exit
+popd
+
+pushd ci-test/app2
+COURSIER_CACHE=/tmp/cache/ java -jar $LAUNCHER @sbt.1.4.0.boot.properties exit
 popd
