@@ -306,9 +306,20 @@ class Launch private[xsbt] (
 
   @tailrec private[this] final def getAppProvider0(
       id: xsbti.ApplicationID,
-      explicitScalaVersion: Option[String],
+      explicitScalaVersion0: Option[String],
       forceAppUpdate: Boolean
   ): xsbti.AppProvider = {
+    val explicitScalaVersion = explicitScalaVersion0 match {
+      case Some(sv) => Some(sv)
+      case _        =>
+        // https://github.com/sbt/sbt/issues/6587
+        // set the Scala version of sbt 1.4.x series to 2.12.12 explicitly
+        // since util-interface depends on Scala 2.13 by mistake
+        // https://github.com/sbt/sbt/blob/v1.4.0/project/Dependencies.scala
+        if (id.groupID() == "org.scala-sbt" &&
+            id.name() == "sbt" && id.version().startsWith("1.4.")) Some("2.12.12")
+        else None
+    }
     val app = appModule(id, explicitScalaVersion, true, "app")
 
     /** Replace the version of an ApplicationID with the given one, if set. */
