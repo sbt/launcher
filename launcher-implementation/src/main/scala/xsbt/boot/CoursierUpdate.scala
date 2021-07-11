@@ -7,6 +7,7 @@ import coursier.core.{ Publication, Repository }
 import coursier.credentials.DirectCredentials
 import coursier.ivy.IvyRepository
 import coursier.maven.MavenRepository
+import coursier.params.ResolutionParams
 import java.io.{ File, FileWriter, PrintWriter }
 import java.nio.file.{ Files, StandardCopyOption, Paths }
 import java.util.Properties
@@ -108,10 +109,19 @@ class CousierUpdate(config: UpdateConfiguration) {
       deps: List[Dependency]
   ): UpdateResult = {
     val repos = config.repositories.map(toCoursierRepository)
+    val params = scalaVersion match {
+      case Some(sv) if sv != "auto" =>
+        ResolutionParams()
+          .withScalaVersion(sv)
+          .withForceScalaVersion(true)
+      case _ =>
+        ResolutionParams()
+    }
     val r: Resolution = Resolve()
       .withCache(coursierCache)
       .addDependencies(deps: _*)
       .withRepositories(repos)
+      .withResolutionParams(params)
       .run()
     val actualScalaVersion =
       (r.dependencySet.set collect {
@@ -143,6 +153,7 @@ class CousierUpdate(config: UpdateConfiguration) {
       .withCache(coursierCache)
       .addDependencies(deps: _*)
       .withRepositories(repos)
+      .withResolutionParams(params)
       .run()
     downloadedJars foreach { downloaded =>
       val t =
