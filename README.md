@@ -59,4 +59,4 @@ sbt -J-XX:MaxPermSize=256M
 
 # License
 
-This software is under a modified BSD license.
+This software is under Apache 2.0 license.
