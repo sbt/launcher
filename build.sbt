@@ -8,7 +8,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / version := {
   val orig = (ThisBuild / version).value
-  if (orig.endsWith("-SNAPSHOT")) "1.2.0-SNAPSHOT"
+  if (orig.endsWith("-SNAPSHOT")) "1.4.0-SNAPSHOT"
   else orig
 }
 ThisBuild / description := "Standalone launcher for maven/ivy deployed projects"
