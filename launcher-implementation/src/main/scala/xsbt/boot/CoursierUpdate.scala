@@ -56,20 +56,40 @@ class CousierUpdate(config: UpdateConfiguration) {
         Console.err.println(
           s"[info] [launcher] getting ${scalaOrgString}Scala $scalaVersion ${reason}..."
         )
-        withPublication(
-          Dependency(
-            Module(Organization(scalaOrg), ModuleName(CompilerModuleName)),
-            scalaVersion
-          ),
-          u.classifiers
-        ) :::
-          withPublication(
-            Dependency(
-              Module(Organization(scalaOrg), ModuleName(LibraryModuleName)),
-              scalaVersion
-            ),
-            u.classifiers
-          )
+        scalaVersion match {
+          case sv if sv.startsWith("2.") =>
+            withPublication(
+              Dependency(
+                Module(Organization(scalaOrg), ModuleName(CompilerModuleName)),
+                scalaVersion
+              ),
+              u.classifiers
+            ) :::
+              withPublication(
+                Dependency(
+                  Module(Organization(scalaOrg), ModuleName(LibraryModuleName)),
+                  scalaVersion
+                ),
+                u.classifiers
+              )
+          case sv if sv.startsWith("3.") =>
+            withPublication(
+              Dependency(
+                Module(Organization(scalaOrg), ModuleName(Compiler3ModuleName)),
+                scalaVersion
+              ),
+              u.classifiers
+            ) :::
+              withPublication(
+                Dependency(
+                  Module(Organization(scalaOrg), ModuleName(Library3ModuleName)),
+                  scalaVersion
+                ),
+                u.classifiers
+              )
+          case _ =>
+            sys.error("unsupported Scala version " + scalaVersion)
+        }
       case u: UpdateApp =>
         val app = u.id
         val resolvedName = (app.crossVersioned, scalaVersion) match {
@@ -103,6 +123,22 @@ class CousierUpdate(config: UpdateConfiguration) {
     update(target, deps)
   }
 
+  private def detectScalaVersion(dependencySet: Set[Dependency]): Option[String] = {
+    def detectScalaVersion3: Option[String] =
+      (dependencySet collect {
+        case d: Dependency
+            if d.module == Module(Organization(scalaOrg), ModuleName(Library3ModuleName)) =>
+          d.version
+      }).headOption
+    def detectScalaVersion2: Option[String] =
+      (dependencySet collect {
+        case d: Dependency
+            if d.module == Module(Organization(scalaOrg), ModuleName(LibraryModuleName)) =>
+          d.version
+      }).headOption
+    detectScalaVersion3.orElse(detectScalaVersion2)
+  }
+
   /** Runs the resolve and retrieve for the given moduleID, which has had its dependencies added already. */
   private def update(
       target: UpdateTarget,
@@ -115,7 +151,14 @@ class CousierUpdate(config: UpdateConfiguration) {
           .withScalaVersion(sv)
           .withForceScalaVersion(true)
       case _ =>
-        ResolutionParams()
+        detectScalaVersion(deps.toSet) match {
+          case Some(sv) =>
+            ResolutionParams()
+              .withScalaVersion(sv)
+              .withForceScalaVersion(true)
+          case _ =>
+            ResolutionParams()
+        }
     }
     val r: Resolution = Resolve()
       .withCache(coursierCache)
@@ -123,12 +166,7 @@ class CousierUpdate(config: UpdateConfiguration) {
       .withRepositories(repos)
       .withResolutionParams(params)
       .run()
-    val actualScalaVersion =
-      (r.dependencySet.set collect {
-        case d: Dependency
-            if d.module == Module(Organization(scalaOrg), ModuleName(LibraryModuleName)) =>
-          d.version
-      }).headOption
+    val actualScalaVersion = detectScalaVersion(r.dependencySet.set)
     val retrieveDir = target match {
       case u: UpdateScala =>
         new File(new File(bootDirectory, baseDirectoryName(scalaOrg, scalaVersion)), "lib")

@@ -201,22 +201,44 @@ final class Update(config: UpdateConfiguration) {
     val dep = target match {
       case u: UpdateScala =>
         val scalaVersion = getScalaVersion
-        addDependency(
-          moduleID,
-          scalaOrg,
-          CompilerModuleName,
-          scalaVersion,
-          "default;optional(default)",
-          u.classifiers
-        )
-        val ddesc = addDependency(
-          moduleID,
-          scalaOrg,
-          LibraryModuleName,
-          scalaVersion,
-          "default",
-          u.classifiers
-        )
+        val ddesc = scalaVersion match {
+          case sv if sv.startsWith("2.") =>
+            addDependency(
+              moduleID,
+              scalaOrg,
+              CompilerModuleName,
+              scalaVersion,
+              "default;optional(default)",
+              u.classifiers
+            )
+            addDependency(
+              moduleID,
+              scalaOrg,
+              LibraryModuleName,
+              scalaVersion,
+              "default",
+              u.classifiers
+            )
+          case sv if sv.startsWith("3.") =>
+            addDependency(
+              moduleID,
+              scalaOrg,
+              Compiler3ModuleName,
+              scalaVersion,
+              "default;optional(default)",
+              u.classifiers
+            )
+            addDependency(
+              moduleID,
+              scalaOrg,
+              Library3ModuleName,
+              scalaVersion,
+              "default",
+              u.classifiers
+            )
+          case _ =>
+            error("unsupported Scala version " + scalaVersion)
+        }
         excludeJUnit(moduleID)
         val scalaOrgString = if (scalaOrg != ScalaOrg) scalaOrg + " " else ""
         Console.err.println(
@@ -324,6 +346,7 @@ final class Update(config: UpdateConfiguration) {
     rule
   }
   val scalaLibraryId = ModuleId.newInstance(ScalaOrg, LibraryModuleName)
+  val scala3Library3Id = ModuleId.newInstance(ScalaOrg, Library3ModuleName)
   // Returns the version of the scala library, as well as `dep` (a dependency of `module`) after it's been resolved
   private def resolve(
       eventManager: EventManager,
@@ -348,8 +371,11 @@ final class Update(config: UpdateConfiguration) {
       error("error retrieving required libraries")
     }
     val modules = moduleRevisionIDs(resolveReport)
-    extractVersion(modules, scalaLibraryId) -> extractVersion(modules, dep)
+    val autoScala =
+      extractVersion(modules, scala3Library3Id).orElse(extractVersion(modules, scalaLibraryId))
+    autoScala -> extractVersion(modules, dep)
   }
+
   private[this] def extractVersion(
       modules: Seq[ModuleRevisionId],
       dep: ModuleId

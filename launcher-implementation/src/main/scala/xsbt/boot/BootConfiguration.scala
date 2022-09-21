@@ -16,7 +16,9 @@ private[boot] object BootConfiguration {
   // these are the Scala module identifiers to resolve/retrieve
   val ScalaOrg = "org.scala-lang"
   val CompilerModuleName = "scala-compiler"
+  val Compiler3ModuleName = "scala3-compiler_3"
   val LibraryModuleName = "scala-library"
+  val Library3ModuleName = "scala3-library_3"
 
   val JUnitName = "junit"
   val JAnsiVersion = "1.18"
@@ -56,7 +58,8 @@ private[boot] object BootConfiguration {
    * The loader will check that these classes can be loaded and will assume that their presence indicates
    * the Scala compiler and library have been downloaded.
    */
-  val TestLoadScalaClasses = "scala.Option" :: "scala.tools.nsc.Global" :: Nil
+  val TestLoadScala2Classes = "scala.Option" :: "scala.tools.nsc.Global" :: Nil
+  val TestLoadScala3Classes = "scala.Option" :: "dotty.tools.dotc.Driver" :: Nil
 
   val ScalaHomeProperty = "scala.home"
   val UpdateLogName = "update.log"

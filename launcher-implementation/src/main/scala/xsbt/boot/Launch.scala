@@ -195,7 +195,8 @@ import BootConfiguration.{
   baseDirectoryName,
   extractScalaVersion,
   ScalaDirectoryName,
-  TestLoadScalaClasses,
+  TestLoadScala2Classes,
+  TestLoadScala3Classes,
   ScalaOrg
 }
 class Launch private[xsbt] (
@@ -409,9 +410,12 @@ class Launch private[xsbt] (
     val scalaM = scalaModule(scalaOrg, scalaVersion)
     val (scalaHome, lib) = scalaDirs(scalaM, scalaOrg, scalaVersion)
     val baseDirs = lib :: Nil
+    def testLoadScalaClasses =
+      if (scalaVersion.startsWith("2.")) TestLoadScala2Classes
+      else TestLoadScala3Classes
     def provider(retrieved: RetrievedModule): xsbti.ScalaProvider = {
       val p = scalaProvider(scalaVersion, retrieved, classLoader, lib)
-      checkLoader(p.loader, retrieved.definition, TestLoadScalaClasses, p)
+      checkLoader(p.loader, retrieved.definition, testLoadScalaClasses, p)
     }
     existing(scalaM, scalaOrg, Some(scalaVersion), _ => baseDirs) flatMap { mod =>
       try Some(provider(mod))
