@@ -216,8 +216,17 @@ class CousierUpdate(config: UpdateConfiguration) {
           }
           new File(retrieveDir, name)
         }
-      Files.copy(downloaded.toPath, t.toPath, StandardCopyOption.REPLACE_EXISTING)
-      ()
+      val isSkip =
+        isScala && (downloaded.getName match {
+          case n if n.startsWith("compiler-interface") => true
+          case n if n.startsWith("util-interface")     => true
+          case _                                       => false
+        })
+      if (isSkip) ()
+      else {
+        Files.copy(downloaded.toPath, t.toPath, StandardCopyOption.REPLACE_EXISTING)
+        ()
+      }
     }
     new UpdateResult(true, actualScalaVersion, depVersion)
   }

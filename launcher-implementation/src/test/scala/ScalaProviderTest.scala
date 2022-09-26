@@ -7,18 +7,6 @@ import LaunchTest._
 import sbt.io.IO.{ createDirectory, touch, withTemporaryDirectory }
 
 object ScalaProviderTest extends verify.BasicTestSuite {
-  test("Launch should provide ClassLoader for Scala 2.8.2") {
-    checkScalaLoader("2.8.2")
-  }
-
-  test("Launch should provide ClassLoader for Scala 2.9.0") {
-    checkScalaLoader("2.9.0")
-  }
-
-  test("Launch should provide ClassLoader for Scala 2.9.2") {
-    checkScalaLoader("2.9.2")
-  }
-
   test("Launch should provide ClassLoader for Scala 2.10.7") {
     checkScalaLoader("2.10.7")
   }
@@ -26,6 +14,19 @@ object ScalaProviderTest extends verify.BasicTestSuite {
   test("Launch should provide ClassLoader for Scala 2.11.12") {
     checkScalaLoader("2.11.12")
   }
+
+  test("Launch should provide ClassLoader for Scala 2.12.17") {
+    checkScalaLoader("2.12.17")
+  }
+
+  test("Launch should provide ClassLoader for Scala 2.13.9") {
+    checkScalaLoader("2.13.9")
+  }
+
+  // Scala version detection picks up 2.13
+  // test("Launch should provide ClassLoader for Scala 3.2.0") {
+  //   checkScalaLoader("3.2.0")
+  // }
 
   test(
     "Launch should successfully load an application from local repository and run it with correct arguments"
@@ -146,7 +147,8 @@ object LaunchTest {
   val finalStyle = Set("2.9.1", "2.9.0-1", "2.9.0", "2.8.2", "2.8.1", "2.8.0")
   def unmapScalaVersion(versionNumber: String) = versionNumber.stripSuffix(".final")
   def mapScalaVersion(versionNumber: String) =
-    if (finalStyle(versionNumber)) versionNumber + ".final" else versionNumber
+    if (finalStyle(versionNumber)) versionNumber + ".final"
+    else versionNumber
 
   def getScalaVersion: String = getScalaVersion(getClass.getClassLoader)
   def getScalaVersion(loader: ClassLoader): String =
