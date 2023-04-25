@@ -2,7 +2,7 @@ package xsbt.boot
 
 import Pre._
 import coursier._
-import coursier.cache.FileCache
+import coursier.cache.{ CacheDefaults, FileCache }
 import coursier.core.{ Publication, Repository }
 import coursier.credentials.DirectCredentials
 import coursier.ivy.IvyRepository
@@ -26,9 +26,43 @@ class CousierUpdate(config: UpdateConfiguration) {
 
   private def logFile = new File(bootDirectory, UpdateLogName)
   private val logWriter = new PrintWriter(new FileWriter(logFile))
+
+  private def defaultCacheLocation: File = {
+    def absoluteFile(path: String): File = new File(path).getAbsoluteFile()
+    def windowsCacheDirectory: File = {
+      // Per discussion in https://github.com/dirs-dev/directories-jvm/issues/43,
+      // LOCALAPPDATA environment variable may NOT represent the one-true
+      // Known Folders API (https://docs.microsoft.com/en-us/windows/win32/shell/knownfolderid)
+      // in case the user happened to have set the LOCALAPPDATA environmental variable.
+      // Given that there's no reliable way of accessing this API from JVM, I think it's actually
+      // better to use the LOCALAPPDATA as the first place to look.
+      // When it is not found, it will fall back to $HOME/AppData/Local.
+      // For the purpose of picking the Coursier cache directory, it's better to be
+      // fast, reliable, and predictable rather than strict adherence to Microsoft.
+      val base =
+        sys.env
+          .get("LOCALAPPDATA")
+          .map(absoluteFile)
+          .getOrElse(new File(new File(absoluteFile(sys.props("user.home")), "AppData"), "Local"))
+      new File(new File(new File(base, "Coursier"), "Cache"), "v1")
+    }
+    sys.props
+      .get("sbt.coursier.home")
+      .map(home => new File(absoluteFile(home), "cache"))
+      .orElse(sys.env.get("COURSIER_CACHE").map(absoluteFile))
+      .orElse(sys.props.get("coursier.cache").map(absoluteFile)) match {
+      case Some(dir) => dir
+      case _ =>
+        if (isWindows) windowsCacheDirectory
+        else CacheDefaults.location
+    }
+  }
   private lazy val coursierCache = {
+    import coursier.util.Task
     val credentials = bootCredentials
-    val cache = credentials.foldLeft(FileCache()) { _.addCredentials(_) }
+    val cache = credentials.foldLeft(FileCache(defaultCacheLocation)(Task.sync)) {
+      _.addCredentials(_)
+    }
     cache
   }
   private lazy val coursierRepos: Seq[Repository] =
