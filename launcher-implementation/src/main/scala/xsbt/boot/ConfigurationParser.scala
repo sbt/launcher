@@ -204,12 +204,20 @@ class ConfigurationParser {
   def getRepositories(m: LabelMap): List[Repository.Repository] = {
     import Repository.{ Ivy, Maven, Predefined }
     val BootOnly = "bootOnly"
+    val BootOnlyZero = "bootOnlyZero"
     val MvnComp = "mavenCompatible"
     val DescriptorOptional = "descriptorOptional"
     val DontCheckConsistency = "skipConsistencyCheck"
     val AllowInsecureProtocol = "allowInsecureProtocol"
     val OptSet =
-      Set(BootOnly, MvnComp, DescriptorOptional, DontCheckConsistency, AllowInsecureProtocol)
+      Set(
+        BootOnly,
+        BootOnlyZero,
+        MvnComp,
+        DescriptorOptional,
+        DontCheckConsistency,
+        AllowInsecureProtocol
+      )
     m.toList.map {
       case (key, None)           => Predefined(key)
       case (key, Some(BootOnly)) => Predefined(key, true)
@@ -224,13 +232,14 @@ class ConfigurationParser {
         val (optionPart, patterns) = r.tail.partition(OptSet.contains(_))
         val options = (
           optionPart.contains(BootOnly),
+          optionPart.contains(BootOnlyZero),
           optionPart.contains(MvnComp),
           optionPart.contains(DescriptorOptional),
           optionPart.contains(DontCheckConsistency),
           optionPart.contains(AllowInsecureProtocol)
         )
         (patterns, options) match {
-          case (both :: Nil, (bo, mc, dso, cc, ip)) =>
+          case (both :: Nil, (bo, boz, mc, dso, cc, ip)) =>
             Ivy(
               key,
               url,
@@ -238,11 +247,12 @@ class ConfigurationParser {
               both,
               mavenCompatible = mc,
               bootOnly = bo,
+              bootOnlyZero = boz,
               descriptorOptional = dso,
               skipConsistencyCheck = cc,
               allowInsecureProtocol = ip
             )
-          case (ivy :: art :: Nil, (bo, mc, dso, cc, ip)) =>
+          case (ivy :: art :: Nil, (bo, boz, mc, dso, cc, ip)) =>
             Ivy(
               key,
               url,
@@ -250,14 +260,15 @@ class ConfigurationParser {
               art,
               mavenCompatible = mc,
               bootOnly = bo,
+              bootOnlyZero = boz,
               descriptorOptional = dso,
               skipConsistencyCheck = cc,
               allowInsecureProtocol = ip
             )
-          case (Nil, (true, false, false, cc, ip)) =>
-            Maven(key, url, bootOnly = true, allowInsecureProtocol = ip)
-          case (Nil, (false, false, false, false, ip)) =>
-            Maven(key, url, allowInsecureProtocol = ip)
+          case (Nil, (true, boz, false, false, cc, ip)) =>
+            Maven(key, url, bootOnly = true, bootOnlyZero = boz, allowInsecureProtocol = ip)
+          case (Nil, (false, boz, false, false, false, ip)) =>
+            Maven(key, url, bootOnly = false, bootOnlyZero = boz, allowInsecureProtocol = ip)
           case _ =>
             Pre.error("could not parse %s: %s".format(key, value))
         }

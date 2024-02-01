@@ -211,11 +211,13 @@ object Application {
 object Repository {
   trait Repository extends xsbti.Repository {
     def bootOnly: Boolean
+    def bootOnlyZero: Boolean
   }
   final case class Maven(
       id: String,
       url: URL,
       bootOnly: Boolean = false,
+      bootOnlyZero: Boolean = false,
       allowInsecureProtocol: Boolean = false
   ) extends xsbti.MavenRepository
       with Repository
@@ -226,13 +228,17 @@ object Repository {
       artifactPattern: String,
       mavenCompatible: Boolean,
       bootOnly: Boolean = false,
+      bootOnlyZero: Boolean = false,
       descriptorOptional: Boolean = false,
       skipConsistencyCheck: Boolean = false,
       allowInsecureProtocol: Boolean = false
   ) extends xsbti.IvyRepository
       with Repository
-  final case class Predefined(id: xsbti.Predefined, bootOnly: Boolean = false)
-      extends xsbti.PredefinedRepository
+  final case class Predefined(
+      id: xsbti.Predefined,
+      bootOnly: Boolean = false,
+      bootOnlyZero: Boolean = false
+  ) extends xsbti.PredefinedRepository
       with Repository
   object Predefined {
     def apply(s: String): Predefined = new Predefined(xsbti.Predefined.toValue(s), false)

@@ -69,9 +69,9 @@ class CousierUpdate(config: UpdateConfiguration) {
     if (repositories.isEmpty) Resolve.defaultRepositories
     else Nil
 
-  def apply(target: UpdateTarget, reason: String): UpdateResult = {
+  def apply(target: UpdateTarget, sbtZero: Boolean, reason: String): UpdateResult = {
     try {
-      update(target, reason)
+      update(target, sbtZero, reason)
     } catch {
       case e: Throwable =>
         e.printStackTrace(logWriter)
@@ -82,7 +82,7 @@ class CousierUpdate(config: UpdateConfiguration) {
     }
   }
 
-  private def update(target: UpdateTarget, reason: String): UpdateResult = {
+  private def update(target: UpdateTarget, sbtZero: Boolean, reason: String): UpdateResult = {
     val deps = target match {
       case u: UpdateScala =>
         val scalaVersion = getScalaVersion
@@ -154,7 +154,7 @@ class CousierUpdate(config: UpdateConfiguration) {
             case _ => Nil
           })
     }
-    update(target, deps)
+    update(target, sbtZero, deps)
   }
 
   private def detectScalaVersion(dependencySet: Set[Dependency]): Option[String] = {
@@ -176,9 +176,15 @@ class CousierUpdate(config: UpdateConfiguration) {
   /** Runs the resolve and retrieve for the given moduleID, which has had its dependencies added already. */
   private def update(
       target: UpdateTarget,
+      sbtZero: Boolean,
       deps: List[Dependency]
   ): UpdateResult = {
-    val repos = config.repositories.map(toCoursierRepository)
+    val repos = config.repositories.flatMap {
+      case repo: xsbt.boot.Repository.Repository =>
+        if (sbtZero || !repo.bootOnlyZero) Some(toCoursierRepository(repo))
+        else None
+      case repo => Some(toCoursierRepository(repo))
+    }
     val params = scalaVersion match {
       case Some(sv) if sv != "auto" =>
         ResolutionParams()
@@ -334,6 +340,8 @@ class CousierUpdate(config: UpdateConfiguration) {
             Repositories.sonatype("snapshots")
           case Jcenter =>
             Repositories.jcenter
+          case ScalaToolsReleases | ScalaToolsSnapshots =>
+            sys.error(s"unsupported repo: ${p.id}")
         }
     }
   }
