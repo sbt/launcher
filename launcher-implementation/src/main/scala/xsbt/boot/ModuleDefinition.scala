@@ -14,7 +14,11 @@ final class ModuleDefinition(
   def retrieveCorrupt(missing: Iterable[String]): Nothing =
     fail(": missing " + missing.mkString(", "))
   private def fail(extra: String) =
-    throw new xsbti.RetrieveException(versionString, "could not retrieve " + failLabel + extra)
+    throw new xsbti.RetrieveException(
+      versionString,
+      "could not retrieve " + failLabel + extra
+        + " " + configuration.repositories.mkString(", ")
+    )
   private def versionString: String = target match {
     case _: UpdateScala => configuration.getScalaVersion;
     case a: UpdateApp   => Value.get(a.id.version)

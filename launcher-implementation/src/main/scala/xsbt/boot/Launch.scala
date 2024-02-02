@@ -233,8 +233,14 @@ class Launch private[xsbt] (
 
   def globalLock: xsbti.GlobalLock = Locks
   def ivyHome = orNull(ivyOptions.ivyHome)
-  def ivyRepositories = (repositories: List[xsbti.Repository]).toArray
-  def appRepositories = ((repositories filterNot (_.bootOnly)): List[xsbti.Repository]).toArray
+  def ivyRepositories =
+    ((repositories
+      .filterNot(_.bootOnlyZero)): List[xsbti.Repository]).toArray
+  def allRepositories = (repositories: List[xsbti.Repository]).toArray
+  def appRepositories =
+    ((repositories
+      .filterNot(_.bootOnly)
+      .filterNot(_.bootOnlyZero)): List[xsbti.Repository]).toArray
   def isOverrideRepositories: Boolean = ivyOptions.isOverrideRepositories
   def checksums = checksumsList.toArray[String]
 

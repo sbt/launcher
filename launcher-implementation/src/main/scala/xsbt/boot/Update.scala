@@ -116,6 +116,41 @@ final class Update(config: UpdateConfiguration) {
     if (realm != null && host != null && user != null && password != null)
       CredentialsStore.INSTANCE.addCredentials(realm, host, user, password)
   }
+
+  private[this] def setScalaVariable(settings: IvySettings, scalaVersion: Option[String]): Unit =
+    scalaVersion match { case Some(sv) => settings.setVariable("scala", sv); case None => }
+
+  // should be the same file as is used in the Ivy module
+  private lazy val ivyLockFile = new File(settings.getDefaultIvyUserDir, ".sbt.ivy.lock")
+  lazy val coursierUpdate = new CousierUpdate(config)
+  var sbtZero = false
+
+  /** The main entry point of this class for use by the Update module.  It runs Ivy */
+  def apply(target: UpdateTarget, reason: String): UpdateResult = {
+    val x = Option(System.getProperty("sbt.launcher.coursier"))
+    sbtZero = target match {
+      // https://github.com/sbt/sbt/issues/6447
+      case u: UpdateApp
+          if u.id.groupID == "org.scala-sbt" &&
+            u.id.getName == "sbt" && u.id.getVersion.startsWith("0.") =>
+        true
+      case _ => false
+    }
+    val useCousier = x match {
+      case Some("true") | Some("1") => true
+      case Some(_)                  => false
+      case None                     => !sbtZero
+    }
+    if (useCousier) coursierUpdate(target, sbtZero, reason)
+    else {
+      Message.setDefaultLogger(new SbtIvyLogger(logWriter))
+      val action = new Callable[UpdateResult] {
+        def call = lockedApply(target, reason)
+      }
+      Locks(ivyLockFile, action)
+    }
+  }
+
   private lazy val settings = {
     addCredentials()
     val settings = new IvySettings
@@ -127,8 +162,6 @@ final class Update(config: UpdateConfiguration) {
     setScalaVariable(settings, scalaVersion)
     settings
   }
-  private[this] def setScalaVariable(settings: IvySettings, scalaVersion: Option[String]): Unit =
-    scalaVersion match { case Some(sv) => settings.setVariable("scala", sv); case None => }
   private lazy val ivy = {
     val ivy = new Ivy() {
       private val loggerEngine = new SbtMessageLoggerEngine;
@@ -137,33 +170,6 @@ final class Update(config: UpdateConfiguration) {
     ivy.setSettings(settings)
     ivy.bind()
     ivy
-  }
-  // should be the same file as is used in the Ivy module
-  private lazy val ivyLockFile = new File(settings.getDefaultIvyUserDir, ".sbt.ivy.lock")
-  lazy val coursierUpdate = new CousierUpdate(config)
-
-  /** The main entry point of this class for use by the Update module.  It runs Ivy */
-  def apply(target: UpdateTarget, reason: String): UpdateResult = {
-    val x = Option(System.getProperty("sbt.launcher.coursier"))
-    val useCousier = x match {
-      case Some("true") | Some("1") => true
-      case Some(_)                  => false
-      case None =>
-        target match {
-          // https://github.com/sbt/sbt/issues/6447
-          case u: UpdateApp
-              if u.id.groupID == "org.scala-sbt" &&
-                u.id.getName == "sbt" && u.id.getVersion.startsWith("0.") =>
-            false
-          case _ => true
-        }
-    }
-    if (useCousier) coursierUpdate(target, reason)
-    else {
-      Message.setDefaultLogger(new SbtIvyLogger(logWriter))
-      val action = new Callable[UpdateResult] { def call = lockedApply(target, reason) }
-      Locks(ivyLockFile, action)
-    }
   }
 
   private def lockedApply(target: UpdateTarget, reason: String): UpdateResult = {
@@ -449,7 +455,11 @@ final class Update(config: UpdateConfiguration) {
   }
   // exclude the local Maven repository for Scala -SNAPSHOTs
   private def includeRepo(repo: xsbti.Repository) =
-    !(Repository.isMavenLocal(repo) && isSnapshot(getScalaVersion))
+    !(Repository.isMavenLocal(repo) && isSnapshot(getScalaVersion)) &&
+      (sbtZero || (repo match {
+        case r: Repository.Repository => !r.bootOnlyZero
+        case _                        => true
+      }))
   private def isSnapshot(scalaVersion: String) = scalaVersion.endsWith(Snapshot)
   private[this] val Snapshot = "-SNAPSHOT"
   private[this] val ChangingPattern = ".*" + Snapshot
