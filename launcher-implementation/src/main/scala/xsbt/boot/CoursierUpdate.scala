@@ -13,6 +13,7 @@ import java.nio.file.{ Files, StandardCopyOption, Paths }
 import java.util.Properties
 import java.util.regex.Pattern
 import BootConfiguration._
+import scala.annotation.nowarn
 
 class CousierUpdate(config: UpdateConfiguration) {
   import config.{
@@ -178,7 +179,7 @@ class CousierUpdate(config: UpdateConfiguration) {
       target: UpdateTarget,
       deps: List[Dependency]
   ): UpdateResult = {
-    val repos = config.repositories.map(toCoursierRepository)
+    val repos = config.repositories.flatMap(toCoursierRepository)
     val params = scalaVersion match {
       case Some(sv) if sv != "auto" =>
         ResolutionParams()
@@ -303,11 +304,12 @@ class CousierUpdate(config: UpdateConfiguration) {
       )).toList
   }
 
-  def toCoursierRepository(repo: xsbti.Repository): Repository = {
+  @nowarn
+  def toCoursierRepository(repo: xsbti.Repository): Seq[Repository] = {
     import xsbti.Predefined._
     repo match {
       case m: xsbti.MavenRepository =>
-        mavenRepository(m.url.toString)
+        mavenRepository(m.url.toString) :: Nil
       case i: xsbti.IvyRepository =>
         ivyRepository(
           i.id,
@@ -318,22 +320,25 @@ class CousierUpdate(config: UpdateConfiguration) {
           i.descriptorOptional,
           i.skipConsistencyCheck,
           i.allowInsecureProtocol
-        )
+        ) :: Nil
       case p: xsbti.PredefinedRepository =>
         p.id match {
           case Local =>
-            localRepository
+            localRepository :: Nil
           case MavenLocal =>
             val localDir = new File(new File(new File(sys.props("user.home")), ".m2"), "repository")
-            mavenRepository(localDir.toPath.toUri.toString)
+            mavenRepository(localDir.toPath.toUri.toString) :: Nil
           case MavenCentral =>
-            Repositories.central
+            Repositories.central :: Nil
           case SonatypeOSSReleases =>
-            Repositories.sonatype("releases")
+            Repositories.sonatype("releases") :: Nil
           case SonatypeOSSSnapshots =>
-            Repositories.sonatype("snapshots")
-          case Jcenter =>
-            Repositories.jcenter
+            Repositories.sonatype("snapshots") :: Nil
+          case Jcenter | ScalaToolsReleases | ScalaToolsSnapshots =>
+            log(
+              s"[warn] [launcher] ${p.id} is deprecated or no longer available; remove from repositories"
+            )
+            Nil
         }
     }
   }

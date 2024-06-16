@@ -93,5 +93,5 @@ object Boot {
   }
 
   private def exit(code: Int): Nothing =
-    System.exit(code).asInstanceOf[Nothing]
+    sys.exit(code)
 }

@@ -7,6 +7,6 @@ object Release {
 
   // Validation for java verison
   def javaVersionCheckSettings = Seq(
-    javaVersionPrefix in javaVersionCheck := Some("1.8")
+    javaVersionCheck / javaVersionPrefix := Some("1.8")
   )
 }

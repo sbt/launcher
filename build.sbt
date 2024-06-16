@@ -2,7 +2,9 @@ import Deps._
 import Util._
 import com.typesafe.tools.mima.core._, ProblemFilters._
 
-lazy val keepFullClasses = settingKey[Seq[String]]("Fully qualified names of classes that proguard should preserve the non-private API of.")
+lazy val keepFullClasses = settingKey[Seq[String]](
+  "Fully qualified names of classes that proguard should preserve the non-private API of."
+)
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / dynverSonatypeSnapshots := true
@@ -12,7 +14,7 @@ ThisBuild / version := {
   else orig
 }
 ThisBuild / description := "Standalone launcher for maven/ivy deployed projects"
-ThisBuild / scalaVersion := "2.13.6"
+ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / publishMavenStyle := true
 ThisBuild / crossPaths := false
 ThisBuild / resolvers += Resolver.typesafeIvyRepo("releases")
@@ -31,9 +33,9 @@ lazy val root = (project in file("."))
     packageDoc in Compile := (packageDoc in Compile in launchSub).value
     commands += Command.command("release") { state =>
       "clean" ::
-      "test" ::
-      "publishSigned" ::
-      state
+        "test" ::
+        "publishSigned" ::
+        state
     }
     validNamespaces ++= Set("xsbt", "xsbti", "scala", "org.apache.ivy", "org.fusesource.jansi")
     validEntries ++= Set("LICENSE", "NOTICE", "module.properties")
@@ -56,19 +58,26 @@ def proguardedLauncherSettings = Seq(
 
 def launchSettings =
   inConfig(Compile)(Transform.configSettings) ++
-  inConfig(Compile)(Transform.transSourceSettings ++ Seq(
-    // TODO - these should be shared between sbt core + sbt-launcher...
-    Transform.inputSourceDirectory := sourceDirectory.value / "input_sources",
-    Transform.sourceProperties := Map("cross.package0" -> "xsbt", "cross.package1" -> "boot")
-  ))
+    inConfig(Compile)(
+      Transform.transSourceSettings ++ Seq(
+        // TODO - these should be shared between sbt core + sbt-launcher...
+        Transform.inputSourceDirectory := sourceDirectory.value / "input_sources",
+        Transform.sourceProperties := Map("cross.package0" -> "xsbt", "cross.package1" -> "boot")
+      )
+    )
 
 // The interface JAR for projects which want to be launched by sbt.
 lazy val launchInterfaceSub = (project in file("launcher-interface"))
   .settings(javaOnly)
   .settings(nocomma {
     name := "Launcher Interface"
-    resourceGenerators in Compile += Def.task{
-      generateVersionFile("sbt.launcher.version.properties")(version.value, resourceManaged.value, streams.value, (compile in Compile).value)
+    resourceGenerators in Compile += Def.task {
+      generateVersionFile("sbt.launcher.version.properties")(
+        version.value,
+        resourceManaged.value,
+        streams.value,
+        (compile in Compile).value
+      )
     }.taskValue
     description := "Interfaces for launching projects with the sbt launcher"
     mimaPreviousArtifacts := Set(organization.value % moduleName.value % "1.0.1")
@@ -119,10 +128,10 @@ lazy val launchSub = (project in file("launcher-implementation"))
     Proguard / proguardOptions ++= keepFullClasses.value map ("-keep public class " + _ + " {\n\tpublic protected * ;\n}")
     Proguard / proguardInputFilter := { file =>
       file.name match {
-        case x if x.startsWith("scala-library") => Some(libraryFilter)
-        case x if x.startsWith("ivy-2.3.0")     => Some(ivyFilter)
+        case x if x.startsWith("scala-library")           => Some(libraryFilter)
+        case x if x.startsWith("ivy-2.3.0")               => Some(ivyFilter)
         case x if x.startsWith("launcher-implementation") => None
-        case _                                  => Some(generalFilter)
+        case _                                            => Some(generalFilter)
       }
     }
     Proguard / proguardOptions += ProguardOptions.keepMain("xsbt.boot.Boot")
@@ -156,7 +165,6 @@ def ivyFilter = {
   excludeString(ivyResources)
 }
 
-
 // used to test the retrieving and loading of an application: sample app is packaged and published to the local repository
 lazy val testSamples = (project in file("test-sample"))
   .dependsOn(launchInterfaceSub)
@@ -169,13 +177,17 @@ lazy val testSamples = (project in file("test-sample"))
   })
 
 ThisBuild / organization := "org.scala-sbt"
-ThisBuild / pomIncludeRepository := { x => false }
+ThisBuild / pomIncludeRepository := { x =>
+  false
+}
 ThisBuild / homepage := Some(url("https://scala-sbt.org"))
 ThisBuild / licenses += "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt")
-ThisBuild / scmInfo := Some(ScmInfo(
-  browseUrl = url("https://github.com/sbt/launcher"),
-  connection = "scm:git@github.com:sbt/launcher.git"
-))
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    browseUrl = url("https://github.com/sbt/launcher"),
+    connection = "scm:git@github.com:sbt/launcher.git"
+  )
+)
 ThisBuild / developers := List(
   Developer("eed3si9n", "Eugene Yokota", "@eed3si9n", url("https://github.com/eed3si9n")),
   Developer("jsuereth", "Josh Suereth", "@jsuereth", url("https://github.com/jsuereth")),
@@ -183,6 +195,7 @@ ThisBuild / developers := List(
 )
 ThisBuild / publishTo := {
   val nexus = "https://oss.sonatype.org/"
-  if (version.value.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
-  else                             Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+  if (version.value.trim.endsWith("SNAPSHOT"))
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
