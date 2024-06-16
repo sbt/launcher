@@ -50,6 +50,7 @@ object Configuration {
       case Array("")         => Console.err.println(s"[warn] [launcher] invalid system property '$head'")
       case Array(key)        => sys.props += key -> ""
       case Array(key, value) => sys.props += key -> value
+      case _                 => ()
     }
     ()
   }
@@ -79,8 +80,8 @@ object Configuration {
       multiPartError("could not find configuration file '" + path + "'. searched:", against)
     resolving.next()
   }
-  def multiPartError[T](firstLine: String, lines: List[T]) =
-    Pre.error((firstLine :: lines).mkString("\n\t"))
+  def multiPartError[A](firstLine: String, lines: List[A]) =
+    Pre.error((firstLine :: lines.map(_.toString())).mkString("\n\t"))
 
   def UnspecifiedVersionPart = "Unspecified"
   def DefaultVersionPart = "Default"

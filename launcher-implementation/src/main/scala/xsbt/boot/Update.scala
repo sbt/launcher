@@ -436,8 +436,10 @@ final class Update(config: UpdateConfiguration) {
     }
     newDefault.setName("redefined-public")
     if (repositories.isEmpty) error("no repositories defined")
-    for (repo <- repositories if includeRepo(repo))
-      newDefault.add(toIvyRepository(settings, repo))
+    for {
+      repo <- repositories if includeRepo(repo)
+      irepo <- toIvyRepositories(settings, repo)
+    } newDefault.add(irepo)
     configureCache(settings)
     settings.addResolver(newDefault)
     settings.setDefaultResolver(newDefault.getName)
@@ -490,10 +492,14 @@ final class Update(config: UpdateConfiguration) {
   }
 
   @nowarn
-  private def toIvyRepository(settings: IvySettings, repo: xsbti.Repository) = {
+  private def toIvyRepositories(
+      settings: IvySettings,
+      repo: xsbti.Repository
+  ): Seq[plugins.resolver.RepositoryResolver] = {
     import xsbti.Predefined._
     repo match {
-      case m: xsbti.MavenRepository => mavenResolver(m.id, m.url.toString, m.allowInsecureProtocol)
+      case m: xsbti.MavenRepository =>
+        mavenResolver(m.id, m.url.toString, m.allowInsecureProtocol) :: Nil
       case i: xsbti.IvyRepository =>
         urlResolver(
           i.id,
@@ -504,7 +510,7 @@ final class Update(config: UpdateConfiguration) {
           i.descriptorOptional,
           i.skipConsistencyCheck,
           i.allowInsecureProtocol
-        )
+        ) :: Nil
       case p: xsbti.PredefinedRepository =>
         val sonatypeReleases = mavenResolver(
           "Sonatype Releases Repository",
@@ -513,27 +519,20 @@ final class Update(config: UpdateConfiguration) {
         )
         p.id match {
           case Local =>
-            localResolver(settings.getDefaultIvyUserDir.getAbsolutePath)
+            localResolver(settings.getDefaultIvyUserDir.getAbsolutePath) :: Nil
           case MavenLocal =>
-            mavenLocal
+            mavenLocal :: Nil
           case MavenCentral =>
-            mavenMainResolver
-          case ScalaToolsReleases =>
-            log(
-              s"[warn] [launcher] $ScalaToolsReleases deprecated. use $SonatypeOSSReleases instead."
-            )
-            sonatypeReleases
+            mavenMainResolver :: Nil
           case SonatypeOSSReleases =>
-            sonatypeReleases
-          case ScalaToolsSnapshots =>
-            log(
-              s"[warn] [launcher] $ScalaToolsSnapshots deprecated. use $SonatypeOSSSnapshots instead."
-            )
-            scalaSnapshots(getScalaVersion)
+            sonatypeReleases :: Nil
           case SonatypeOSSSnapshots =>
-            scalaSnapshots(getScalaVersion)
-          case Jcenter =>
-            jcenterResolver
+            scalaSnapshots(getScalaVersion) :: Nil
+          case Jcenter | ScalaToolsReleases | ScalaToolsSnapshots =>
+            log(
+              s"[warn] [launcher] ${p.id} is deprecated or no longer available; remove from repositories"
+            )
+            Nil
         }
     }
   }
@@ -601,11 +600,9 @@ final class Update(config: UpdateConfiguration) {
       || str.startsWith("http://127.0.0.1:"))
   }
   private def centralRepositoryRoot: String = "https://repo1.maven.org/maven2/"
-  private def jcenterRepositoryRoot: String = "https://jcenter.bintray.com/"
 
   /** Creates a resolver for Maven Central.*/
   private def mavenMainResolver = defaultMavenResolver("Maven Central")
-  private def jcenterResolver = mavenResolver("JCenter", jcenterRepositoryRoot, false)
 
   /** Creates a maven-style resolver with the default root.*/
   private def defaultMavenResolver(name: String) =

@@ -61,7 +61,7 @@ object CrossVersionUtil
 		major > minMajor || (major == minMajor && minor >= minMinor)
 	private[this] def binaryVersionWithApi(full: String, cutoff: String)(apiVersion: String => Option[(Int,Int)]): String =
 	{
-		def sub(major: Int, minor: Int) = major + "." + minor
+		def sub(major: Int, minor: Int) = major.toString() + "." + minor
 		(apiVersion(full), partialVersion(cutoff)) match {
 			case (Some((major, minor)), None) => sub(major, minor)
 			case (Some((major, minor)), Some((minMajor, minMinor))) if isNewer(major, minor, minMajor, minMinor) => sub(major, minor)

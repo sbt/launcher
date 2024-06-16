@@ -38,7 +38,7 @@ object ConfigurationParser {
     b.toString
   }
 
-  implicit val readIDs = ids _
+  implicit val readIDs: String => List[String] = ids _
 }
 class ConfigurationParser {
   def apply(file: File): LaunchConfiguration = Using(newReader(file))(apply)
