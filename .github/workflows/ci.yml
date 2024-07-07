@@ -11,6 +11,7 @@ jobs:
         include:
           - os: ubuntu-latest
             java: 8
+            distribution: zulu
     runs-on: ${{ matrix.os }}
     env:
       # define Java options for both official sbt and sbt-extras
@@ -18,13 +19,15 @@ jobs:
       JVM_OPTS:  -Xms2048M -Xmx2048M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Setup JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
-        distribution: temurin
+        distribution: "${{ matrix.distribution }}"
         java-version: "${{ matrix.java }}"
         cache: sbt
+    - name: Setup sbt
+      uses: sbt/setup-sbt@v1
     - name: Build and test
       run: |
         sbt -v "mimaReportBinaryIssues; scalafmtCheckAll; shadedPackageBin; test;"
