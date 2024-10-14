@@ -66,7 +66,7 @@ object Transform {
     val ss = inputSources.value
     val sdirs = inputSourceDirectories.value
     val sm = sourceManaged.value
-    (ss --- sdirs) pair (rebase(sdirs, sm) | flat(sm)) toSeq
+    (ss --- sdirs).pair(rebase(sdirs, sm) | flat(sm)).toSeq
   }
   def configSettings = transResourceSettings ++ Seq(
     resourceProperties := {
@@ -95,7 +95,7 @@ object Transform {
     val rs = inputResources.value
     val rdirs = inputResourceDirectories.value
     val rm = resourceManaged.value
-    (rs --- rdirs) pair (rebase(rdirs, rm) | flat(rm)) toSeq
+    (rs --- rdirs).pair(rebase(rdirs, rm) | flat(rm)).toSeq
   }
 
   def transform(in: File, out: File, map: Map[String, String]): File = {
