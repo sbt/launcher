@@ -383,7 +383,7 @@ final class Update(config: UpdateConfiguration) {
     modules collectFirst { case m if m.getModuleId.equals(dep) => m.getRevision }
   }
   private[this] def moduleRevisionIDs(report: ResolveReport): Seq[ModuleRevisionId] = {
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     import org.apache.ivy.core.resolve.IvyNode
     report.getDependencies.asInstanceOf[java.util.List[IvyNode]].asScala.toSeq map (_.getResolvedId)
   }
@@ -446,7 +446,7 @@ final class Update(config: UpdateConfiguration) {
   }
   // infrastructure is needed to avoid duplication between this class and the ivy/ subproject
   private def hasImplicitClassifier(artifact: IArtifact): Boolean = {
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     artifact.getQualifiedExtraAttributes.asScala.keys.exists(_.asInstanceOf[String] startsWith "m:")
   }
   // exclude the local Maven repository for Scala -SNAPSHOTs

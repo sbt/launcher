@@ -80,7 +80,7 @@ private[xsbt] class ParallelRetrieveEngine(
         else settings.resolveFile(IvyPatternHelper.getTokenRoot(destIvyPattern))
 
       implicit val ec = ParallelRetrieveEngine.retrieveExecutionContext
-      import scala.collection.JavaConverters._
+      import scala.jdk.CollectionConverters._
       type ValueType = julSet[String]
       val allRetrivedFuture = artifactsToCopy.entrySet().asScala.map {
         case artifactAndPaths: julMap.Entry[ArtifactDownloadReport, ValueType] @unchecked =>
