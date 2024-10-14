@@ -91,9 +91,9 @@ object Licensed {
 
   def settings: Seq[Setting[_]] = Seq(
     notice := baseDirectory.value / "NOTICE",
-    unmanagedResources in Compile ++= (notice.value +: extractLicenses.value),
+    Compile / unmanagedResources ++= (notice.value +: extractLicenses.value),
     extractLicenses := extractLicenses0(
-      (baseDirectory in ThisBuild).value,
+      (ThisBuild / baseDirectory).value,
       notice.value,
       streams.value
     )

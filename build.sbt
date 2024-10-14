@@ -29,8 +29,8 @@ lazy val root = (project in file("."))
   .settings(nocomma {
     mimaPreviousArtifacts := Set.empty
     Compile / packageBin := (launchSub / Proguard / proguard).value.head
-    packageSrc in Compile := (packageSrc in Compile in launchSub).value
-    packageDoc in Compile := (packageDoc in Compile in launchSub).value
+    Compile / packageSrc := (launchSub / Compile / packageSrc).value
+    Compile / packageDoc := (launchSub / Compile / packageDoc).value
     commands += Command.command("release") { state =>
       "clean" ::
         "test" ::
@@ -50,7 +50,7 @@ lazy val root = (project in file("."))
 // the launcher is published with metadata so that the scripted plugin can pull it in
 // being proguarded, it shouldn't ever be on a classpath with other jars, however
 def proguardedLauncherSettings = Seq(
-  publishArtifact in packageSrc := false,
+  packageSrc / publishArtifact := false,
   moduleName := "sbt-launch",
   autoScalaLibrary := false,
   description := "sbt application launcher"
@@ -71,12 +71,12 @@ lazy val launchInterfaceSub = (project in file("launcher-interface"))
   .settings(javaOnly)
   .settings(nocomma {
     name := "Launcher Interface"
-    resourceGenerators in Compile += Def.task {
+    Compile / resourceGenerators += Def.task {
       generateVersionFile("sbt.launcher.version.properties")(
         version.value,
         resourceManaged.value,
         streams.value,
-        (compile in Compile).value
+        (Compile / compile).value
       )
     }.taskValue
     description := "Interfaces for launching projects with the sbt launcher"
@@ -112,7 +112,7 @@ lazy val launchSub = (project in file("launcher-implementation"))
     Test / compile := {
       val ignore = (testSamples / publishLocal).value
       val ignore2 = (launchInterfaceSub / publishLocal).value
-      (compile in Test).value
+      (Test / compile).value
     }
     Proguard / proguardOptions ++= Seq(
       "-keep,allowshrinking class * { *; }", // no obfuscation
