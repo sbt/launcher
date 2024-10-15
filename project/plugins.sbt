@@ -7,3 +7,5 @@ addSbtPlugin("com.github.sbt" % "sbt-proguard" % "0.5.0")
 addSbtPlugin("com.eed3si9n" % "sbt-nocomma" % "0.1.2")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.2")
 addSbtPlugin("io.get-coursier" % "sbt-shading" % "2.1.5")
+
+scalacOptions += "-feature"
