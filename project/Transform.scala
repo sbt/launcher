@@ -19,8 +19,8 @@ object Transform {
 
   def conscriptSettings(launch: Reference) = Seq(
     conscriptConfigs := {
-      val res = (managedResources in launch in Compile).value
-      val src = (sourceDirectory in Compile).value
+      val res = (launch / Compile / managedResources).value
+      val src = (Compile / sourceDirectory).value
       val source = res.filter(_.getName == "sbt.boot.properties").headOption getOrElse sys.error(
         "No managed boot.properties file."
       )
@@ -54,9 +54,9 @@ object Transform {
     inputSourceDirectory := sourceDirectory.value / "input_sources",
     inputSourceDirectories := Seq(inputSourceDirectory.value),
     inputSources := (inputSourceDirectories.value ** (-DirectoryFilter)).get,
-    fileMappings in transformSources := transformSourceMappings.value,
+    transformSources / fileMappings := transformSourceMappings.value,
     transformSources := {
-      (fileMappings in transformSources).value.map {
+      (transformSources / fileMappings).value.map {
         case (in, out) => transform(in, out, sourceProperties.value)
       }
     },
@@ -83,9 +83,9 @@ object Transform {
     inputResourceDirectory := sourceDirectory.value / "input_resources",
     inputResourceDirectories := Seq(inputResourceDirectory.value),
     inputResources := (inputResourceDirectories.value ** (-DirectoryFilter)).get,
-    fileMappings in transformResources := transformResourceMappings.value,
+    transformResources / fileMappings := transformResourceMappings.value,
     transformResources := {
-      (fileMappings in transformResources).value.map {
+      (transformResources / fileMappings).value.map {
         case (in, out) => transform(in, out, resourceProperties.value)
       }
     },
