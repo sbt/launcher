@@ -493,7 +493,8 @@ class Launch private[xsbt] (
         entryPoint.asSubclass(AppMainClass)
       def newMain(): xsbti.AppMain = {
         if (ServerApplication.isServerApplication(entryPoint)) ServerApplication(this)
-        else if (AppMainClass.isAssignableFrom(entryPoint)) mainClass.newInstance
+        else if (AppMainClass.isAssignableFrom(entryPoint))
+          mainClass.getDeclaredConstructor().newInstance()
         else if (PlainApplication.isPlainApplication(entryPoint)) PlainApplication(entryPoint)
         else
           throw new IncompatibleClassChangeError(
