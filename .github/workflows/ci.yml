@@ -30,6 +30,6 @@ jobs:
       uses: sbt/setup-sbt@v1
     - name: Build and test
       run: |
-        sbt -v "mimaReportBinaryIssues; scalafmtSbtCheck; scalafmtCheckAll; shadedPackageBin; test;"
+        sbt -v "mimaReportBinaryIssues; scalafmtSbtCheck; scalafmtCheckAll; packageBin; shadedPackageBin; test;"
         ci-test/test.sh
       shell: bash
