@@ -125,6 +125,7 @@ lazy val launchSub = (project in file("launcher-implementation"))
     )
 
     keepFullClasses := "xsbti.**" :: Nil
+    Proguard / proguard / javaOptions := Seq("-Xmx1G")
     Proguard / proguardOptions ++= keepFullClasses.value map ("-keep public class " + _ + " {\n\tpublic protected * ;\n}")
     Proguard / proguardInputFilter := { file =>
       file.name match {
