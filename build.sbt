@@ -24,7 +24,7 @@ ThisBuild / Test / scalafmtOnCompile := !(Global / insideCI).value
 
 lazy val root = (project in file("."))
   .enablePlugins(ShadingPlugin)
-  .aggregate(launchInterfaceSub, launchSub)
+  .aggregate(launchInterfaceSub, launchSub, testSamples)
   .settings(javaOnly ++ Util.commonSettings("launcher") ++ Release.settings)
   .settings(nocomma {
     mimaPreviousArtifacts := Set.empty
@@ -170,8 +170,10 @@ def ivyFilter = {
 lazy val testSamples = (project in file("test-sample"))
   .dependsOn(launchInterfaceSub)
   .settings(Release.javaVersionCheckSettings)
+  .settings(Util.baseScalacOptions)
   .settings(nocomma {
     name := "Launch Test"
+    mimaFailOnNoPrevious := false
     publish := { () }
     publishSigned := { () }
     libraryDependencies += scalaCompiler.value

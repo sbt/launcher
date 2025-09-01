@@ -1,4 +1,4 @@
-/** These are packaged and published locally and the resulting artifact is used to test the launcher.*/
+/** These are packaged and published locally and the resulting artifact is used to test the launcher. */
 package xsbt.boot.test
 
 import java.net.Socket
@@ -41,7 +41,7 @@ class EchoServer extends xsbti.ServerMain {
             // Lame way to break out.
             breakable {
               def read(): Unit = input.readLine match {
-                case null => ()
+                case null   => ()
                 case "kill" =>
                   running.set(false)
                   serverSocket.close()
