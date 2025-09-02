@@ -141,7 +141,7 @@ object Configuration {
       toDirectory(classLocation(getClass).toURI) ::
       Nil
 
-  def classLocation(cl: Class[_]): URL = {
+  def classLocation(cl: Class[?]): URL = {
     val codeSource = cl.getProtectionDomain.getCodeSource
     if (codeSource == null) Pre.error("no class location for " + cl)
     else codeSource.getLocation

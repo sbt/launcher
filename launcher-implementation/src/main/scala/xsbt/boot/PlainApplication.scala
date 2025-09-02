@@ -31,13 +31,13 @@ class PlainApplication private (mainMethod: java.lang.reflect.Method) extends xs
 
 /** An object that lets us detect compatible "plain" applications and launch them reflectively. */
 object PlainApplication {
-  def isPlainApplication(clazz: Class[_]): Boolean = findMainMethod(clazz).isDefined
-  def apply(clazz: Class[_]): xsbti.AppMain =
+  def isPlainApplication(clazz: Class[?]): Boolean = findMainMethod(clazz).isDefined
+  def apply(clazz: Class[?]): xsbti.AppMain =
     findMainMethod(clazz) match {
       case Some(method) => new PlainApplication(method)
       case None         => sys.error("class: " + clazz + " does not have a main method!")
     }
-  private def findMainMethod(clazz: Class[_]): Option[java.lang.reflect.Method] =
+  private def findMainMethod(clazz: Class[?]): Option[java.lang.reflect.Method] =
     try {
       val method =
         clazz.getMethod("main", classOf[Array[String]])

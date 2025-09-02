@@ -26,7 +26,7 @@ object ServerApplication {
   val ServerMainClass = classOf[xsbti.ServerMain]
   // TODO - We should also adapt friendly static methods into servers, perhaps...
   // We could even structurally type things that have a uri + awaitTermination method...
-  def isServerApplication(clazz: Class[_]): Boolean =
+  def isServerApplication(clazz: Class[?]): Boolean =
     ServerMainClass.isAssignableFrom(clazz)
   def apply(provider: xsbti.AppProvider): xsbti.AppMain =
     new ServerApplication(provider)

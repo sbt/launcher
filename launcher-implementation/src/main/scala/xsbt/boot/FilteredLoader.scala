@@ -12,7 +12,7 @@ import scala.collection.immutable.Stream
  */
 private[boot] final class BootFilteredLoader(parent: ClassLoader) extends ClassLoader(parent) {
   @throws(classOf[ClassNotFoundException])
-  override final def loadClass(className: String, resolve: Boolean): Class[_] = {
+  override final def loadClass(className: String, resolve: Boolean): Class[?] = {
     // note that we allow xsbti.*
     if (
       className.startsWith(ScalaPackage) || className.startsWith(IvyPackage) || className

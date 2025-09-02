@@ -119,9 +119,9 @@ class ConfigurationParser {
     process[String, LabelMap, T](sections, name, m => f(m default (x => None)))
   def process[K, V, T](sections: ListMap[K, V], name: K, f: V => T): (T, ListMap[K, V]) =
     (f(sections(name)), sections - name)
-  def check(map: ListMap[String, _], label: String): Unit =
+  def check(map: ListMap[String, ?], label: String): Unit =
     if (map.isEmpty) () else Pre.error(map.keys.mkString("Invalid " + label + "(s): ", ",", ""))
-  def check[T](label: String, pair: (T, ListMap[String, _])): T = { check(pair._2, label); pair._1 }
+  def check[T](label: String, pair: (T, ListMap[String, ?])): T = { check(pair._2, label); pair._1 }
   def id(map: LabelMap, name: String, default: String): (String, LabelMap) =
     (substituteVariables(orElse(getOrNone(map, name), default)), map - name)
   def getOrNone[K, V](map: ListMap[K, Option[V]], k: K) = orElse(map.get(k), None)
