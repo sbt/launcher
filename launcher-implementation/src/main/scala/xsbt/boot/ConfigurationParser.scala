@@ -145,7 +145,18 @@ class ConfigurationParser:
     val (overrideRepos, m3) = bool(m2, "override-build-repos", false)
     val (repoConfig, m4) = optfile(m3, "repository-config")
     check(m4, "label")
-    (ivyHome, checksums, overrideRepos, repoConfig filter (_.exists))
+    val globalBase =
+      Option(System.getProperty("sbt.global.base")).getOrElse(
+        System.getProperty("user.home", ".") + "/.sbt"
+      )
+    val reposForceFile = new File(globalBase, "repositories_force")
+    val forceOverride = try reposForceFile.exists() catch { case _: SecurityException => false }
+    val effectiveOverride = overrideRepos || forceOverride
+    val effectiveRepoConfig =
+      if forceOverride && (repoConfig.isEmpty || !repoConfig.exists(_.exists()))
+      then Some(new File(globalBase, "repositories"))
+      else repoConfig
+    (ivyHome, checksums, effectiveOverride, effectiveRepoConfig filter (_.exists))
   def getBoot(m: LabelMap): BootSetup =
     val (dir, m1) = file(m, "directory", toFile("project/boot"))
     val (props, m2) = file(m1, "properties", toFile("project/build.properties"))
