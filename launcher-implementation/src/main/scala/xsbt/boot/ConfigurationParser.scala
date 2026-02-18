@@ -150,7 +150,9 @@ class ConfigurationParser:
         System.getProperty("user.home", ".") + "/.sbt"
       )
     val reposForceFile = new File(globalBase, "repositories_force")
-    val forceOverride = try reposForceFile.exists() catch { case _: SecurityException => false }
+    val reposFile = new File(globalBase, "repositories")
+    val forceOverride = try reposForceFile.exists() && reposFile.exists()
+    catch { case _: SecurityException => false }
     val effectiveOverride = overrideRepos || forceOverride
     val effectiveRepoConfig =
       if forceOverride && (repoConfig.isEmpty || !repoConfig.exists(_.exists()))
