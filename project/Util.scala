@@ -27,7 +27,6 @@ object Util {
         "-feature",
         "-language:implicitConversions",
         "-language:postfixOps",
-        "-language:higherKinds",
         "-language:existentials",
         "-Werror",
         "-Wunused:all",
