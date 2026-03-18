@@ -31,4 +31,3 @@ object BootExitSuppressionTest extends verify.BasicTestSuite:
       // If sys.exit was called, the test JVM would be terminated.
     }
   }
-
