@@ -13,14 +13,20 @@ object Boot:
   lazy val globalBase = sys.props.get("sbt.global.base").getOrElse(defaultGlobalBase.toString)
 
   def main(args: Array[String]): Unit =
-    standBy()
-    val config = parseArgs(args)
-    // If we havne't exited, we set up some hooks and launch
-    System.clearProperty("scala.home") // avoid errors from mixing Scala versions in the same JVM
-    System.setProperty("jline.shutdownhook", "false") // shutdown hooks cause class loader leaks
-    System.setProperty("jline.esc.timeout", "0") // starts up a thread otherwise
-    CheckProxy()
-    run(config)
+    try
+      standBy()
+      val config = parseArgs(args)
+      // If we haven't exited, we set up some hooks and launch
+      System.clearProperty("scala.home") // avoid errors from mixing Scala versions in the same JVM
+      System.setProperty("jline.shutdownhook", "false") // shutdown hooks cause class loader leaks
+      System.setProperty("jline.esc.timeout", "0") // starts up a thread otherwise
+      CheckProxy()
+      run(config)
+    catch
+      // When sbt.boot.exit=false is set by an embedding application, exit() converts
+      // sys.exit calls into this exception so the host JVM is not terminated.
+      // See: https://github.com/sbt/sbt/issues/7540
+      case _: BootExit => ()
 
   def standBy(): Unit =
     import scala.concurrent.duration.Duration
@@ -45,7 +51,7 @@ object Boot:
       args match
         case "--launcher-version" :: _ =>
           Console.err.println(
-            "sbt launcher version " + Package.getPackage("xsbt.boot").getImplementationVersion
+            "sbt launcher version " + getClass.getPackage.getImplementationVersion
           )
           exit(0)
         case "--rt-ext-dir" :: _ =>
@@ -85,5 +91,15 @@ object Boot:
     }
     exit(1)
 
-  private def exit(code: Int): Nothing =
-    sys.exit(code)
+  // Public so Find.scala can route its own System.exit calls through here.
+  def exit(code: Int): Nothing =
+    if exitSuppressed then throw BootExit(code)
+    else sys.exit(code)
+
+  // When an embedding application sets -Dsbt.boot.exit=false, exit() throws
+  // BootExit instead of calling sys.exit, so Boot.main can catch it and return
+  // normally without terminating the host JVM.
+  private def exitSuppressed: Boolean =
+    sys.props.get("sbt.boot.exit").exists(_.toLowerCase == "false")
+
+  private case class BootExit(code: Int) extends RuntimeException(code.toString)
