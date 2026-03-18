@@ -35,7 +35,7 @@ class Find(config: LaunchConfiguration):
                   "[error] [launcher] search method is 'only' and multiple ancestor directories match:\n\t" + fromRoot
                     .mkString("\n\t")
                 )
-                System.exit(1)
+                Boot.exit(1)
                 None
         case _ => Some(current)
     val baseDirectory = orElse(found, current)
