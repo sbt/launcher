@@ -33,6 +33,7 @@ object Boot:
     val x = System.getProperty("sbt.launcher.standby")
     if x == null then ()
     else
+      System.clearProperty("sbt.launcher.standby") // prevent double-execution on FullReload
       val sec = Duration(x).toSeconds
       if sec >= 1 then
         (sec to 1 by -1) foreach { i =>
