@@ -17,7 +17,6 @@ ThisBuild / description := "Standalone launcher for maven/ivy deployed projects"
 ThisBuild / scalaVersion := "3.7.2"
 ThisBuild / publishMavenStyle := true
 ThisBuild / crossPaths := false
-ThisBuild / resolvers += Resolver.typesafeIvyRepo("releases")
 ThisBuild / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1")
 ThisBuild / scalafmtOnCompile := !(Global / insideCI).value
 ThisBuild / Test / scalafmtOnCompile := !(Global / insideCI).value
