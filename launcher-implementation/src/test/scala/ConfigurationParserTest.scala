@@ -5,9 +5,51 @@
 
 package xsbt.boot
 
+import java.io.File
 import java.net.URI
+import java.nio.file.Files
 
 object ConfigurationParserTest extends verify.BasicTestSuite:
+  test("repository override activation combines the configured value and file existence") {
+    val directory = Files.createTempDirectory("launcher-repository-override-test").toFile
+    val repositoryConfig = new File(directory, "repositories")
+    val repositoryOverride = new File(directory, "repositories_force")
+    Files.write(repositoryConfig.toPath, "[repositories]\n  local\n".getBytes("UTF-8"))
+
+    try
+      val cases = List(
+        (false, false, false, repositoryConfig),
+        (true, false, true, repositoryConfig),
+        (false, true, true, repositoryOverride),
+        (true, true, true, repositoryOverride)
+      )
+
+      cases.foreach {
+        case (configuredOverride, overrideFileExists, expectedOverride, expectedFile) =>
+          if overrideFileExists then
+            Files.write(
+              repositoryOverride.toPath,
+              "[repositories]\n  maven-central\n".getBytes("UTF-8")
+            )
+          else Files.deleteIfExists(repositoryOverride.toPath)
+
+          val ivy =
+            ListMap[String, Option[String]](
+              "override-build-repos" -> Option(configuredOverride.toString),
+              "repository-config" -> Option(repositoryConfig.getAbsolutePath),
+              "repository-override" -> Option(repositoryOverride.getAbsolutePath)
+            ).default(_ => None)
+          val (_, _, actualOverride, actualFile) = (new ConfigurationParser).getIvy(ivy)
+
+          assert(actualOverride == expectedOverride)
+          assert(actualFile.contains(expectedFile))
+      }
+    finally
+      Files.deleteIfExists(repositoryOverride.toPath)
+      Files.deleteIfExists(repositoryConfig.toPath)
+      Files.deleteIfExists(directory.toPath)
+  }
+
   test("Configuration parser should correct parse bootOnly") {
     repoFileContains(
       """|[repositories]
