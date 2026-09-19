@@ -67,7 +67,7 @@ object Licensed {
 
   lazy val seeRegex = """\(see (.*?)\)""".r
   def licensePath(base: File, str: String): File = {
-    val path = base / str;
+    val path = base / str
     if (path.exists) path else sys.error("Referenced license '" + str + "' not found at " + path)
   }
   def seePaths(base: File, noticeString: String): Seq[File] =

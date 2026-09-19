@@ -151,17 +151,17 @@ class CousierUpdate(config: UpdateConfiguration):
 
   private def detectScalaVersion(dependencySet: Set[Dependency]): Option[String] =
     def detectScalaVersion3: Option[String] =
-      (dependencySet collect {
+      dependencySet.collectFirst {
         case d: Dependency
             if d.module == Module(Organization(scalaOrg), ModuleName(Library3ModuleName)) =>
           d.version
-      }).headOption
+      }
     def detectScalaVersion2: Option[String] =
-      (dependencySet collect {
+      dependencySet.collectFirst {
         case d: Dependency
             if d.module == Module(Organization(scalaOrg), ModuleName(LibraryModuleName)) =>
           d.version
-      }).headOption
+      }
     detectScalaVersion3.orElse(detectScalaVersion2)
 
   /** Runs the resolve and retrieve for the given moduleID, which has had its dependencies added already. */
