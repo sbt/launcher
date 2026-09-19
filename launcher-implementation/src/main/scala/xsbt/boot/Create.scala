@@ -10,11 +10,13 @@ import java.io.File
 import java.util.{ Locale, Properties }
 import scala.collection.immutable.List
 import PropertyInit.*
+import scala.annotation.tailrec
 
 object Initialize:
   lazy val selectCreate = (_: AppProperty).create
   lazy val selectQuick = (_: AppProperty).quick
   lazy val selectFill = (_: AppProperty).fill
+  @tailrec
   def create(
       file: File,
       promptCreate: String,

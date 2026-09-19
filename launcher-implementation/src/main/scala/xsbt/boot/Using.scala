@@ -6,6 +6,7 @@
 package xsbt.boot
 
 import java.io.{ Closeable, File, FileInputStream, FileOutputStream, InputStream, OutputStream }
+import scala.annotation.tailrec
 
 object Using:
   def apply[R <: Closeable, T](create: R)(f: R => T): T = withResource(create)(f)
@@ -31,6 +32,7 @@ object Copy:
     missing
   def transfer(in: InputStream, out: OutputStream): Unit =
     val buffer = new Array[Byte](8192)
+    @tailrec
     def next(): Unit =
       val read = in.read(buffer)
       if read > 0 then

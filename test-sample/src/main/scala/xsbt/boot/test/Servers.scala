@@ -7,6 +7,7 @@ package xsbt.boot.test
 
 import java.net.Socket
 import java.net.SocketTimeoutException
+import scala.annotation.tailrec
 
 class EchoServer extends xsbti.ServerMain:
   def start(configuration: xsbti.AppConfiguration): xsbti.Server =
@@ -41,6 +42,7 @@ class EchoServer extends xsbti.ServerMain:
           try
             // Lame way to break out.
             breakable {
+              @tailrec
               def read(): Unit = input.readLine match
                 case null   => ()
                 case "kill" =>

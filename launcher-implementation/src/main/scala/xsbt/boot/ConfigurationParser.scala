@@ -12,7 +12,7 @@ import java.net.{ MalformedURLException, URL }
 import java.util.regex.{ Matcher, Pattern }
 import Matcher.quoteReplacement
 import scala.collection.immutable.List
-import scala.annotation.nowarn
+import scala.annotation.{ nowarn, tailrec }
 
 object ConfigurationParser:
   def trim(s: Array[String]) = s.map(_.trim).toList
@@ -44,6 +44,7 @@ class ConfigurationParser:
   def apply(reader: Reader): LaunchConfiguration = Using(new BufferedReader(reader))(apply)
   private def apply(in: BufferedReader): LaunchConfiguration =
     processSections(processLines(readLine(in, Nil, 0)))
+  @tailrec
   private final def readLine(in: BufferedReader, accum: List[Line], index: Int): List[Line] =
     in.readLine match
       case null => accum.reverse

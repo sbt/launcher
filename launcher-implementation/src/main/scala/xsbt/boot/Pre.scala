@@ -8,6 +8,7 @@ package xsbt.boot
 import java.io.{ File, FileFilter }
 import java.net.URL
 import java.util.Locale
+import scala.annotation.tailrec
 import scala.collection.immutable.List
 import scala.reflect.ClassTag
 
@@ -16,6 +17,7 @@ object Pre:
     val c = System.console()
     if c eq null then None else Option(c.readLine(prompt))
   def trimLeading(line: String) =
+    @tailrec
     def newStart(i: Int): Int =
       if i >= line.length || !Character.isWhitespace(line.charAt(i)) then i else newStart(i + 1)
     line.substring(newStart(0))
@@ -33,6 +35,7 @@ object Pre:
 
   def toArray[T: ClassTag](list: List[T]) =
     val arr = new Array[T](list.length)
+    @tailrec
     def copy(i: Int, rem: List[T]): Unit =
       if i < arr.length then
         arr(i) = rem.head
