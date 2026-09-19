@@ -14,28 +14,90 @@ ThisBuild / version := {
   else orig
 }
 ThisBuild / description := "Standalone launcher for maven/ivy deployed projects"
-ThisBuild / scalaVersion := "3.7.2"
 ThisBuild / publishMavenStyle := true
 ThisBuild / crossPaths := false
 ThisBuild / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-w", "1")
 ThisBuild / scalafmtOnCompile := !(Global / insideCI).value
 ThisBuild / Test / scalafmtOnCompile := !(Global / insideCI).value
+ThisBuild / Test / parallelExecution := false
 
-lazy val root = (project in file("."))
+val scala3 = "3.3.8"
+
+scalaVersion := scala3
+
+val scalaVersions = Seq(scala3)
+
+val jdk8 = JdkCross("-jdk8", "-jdk8")
+val jdk11 = JdkCross("", "-jdk11")
+
+val launcherSubProject = settingKey[Project]("")
+
+val jdk8settings = Def.settings(
+  scalacOptions += "-release:8",
+  name := s"${name.value}-jdk8"
+)
+val jdk11settings = Def.settings(
+  scalacOptions ++= Seq(
+    "-Yfuture-lazy-vals",
+    "-release:11",
+  )
+)
+
+commands += Command.command("release") { state =>
+  "clean" ::
+    "test" ::
+    launcher.allProjects.map(p => s"${p._1.id}/publishSigned").toList :::
+    state
+}
+
+mimaFailOnNoPrevious := false
+
+lazy val launcher = (projectMatrix in file("."))
+  .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(scala3))
+  .jvmPlatform(
+    scalaVersions = scalaVersions,
+    axisValues = Seq(jdk8),
+    settings = Def.settings(nocomma {
+      jdk8settings
+      launcherSubProject := {
+        val Seq(p) = launchSub.finder(jdk8).get
+        p
+      }
+    }),
+  )
+  .jvmPlatform(
+    scalaVersions = scalaVersions,
+    axisValues = Seq(jdk11),
+    settings = Def.settings(
+      jdk11settings,
+      launcherSubProject := {
+        val Seq(p) = launchSub.finder(jdk11).get
+        p
+      }
+    ),
+  )
   .enablePlugins(ShadingPlugin)
-  .aggregate(launchInterfaceSub, launchSub, testSamples)
   .settings(javaOnly ++ Util.commonSettings("launcher") ++ Release.settings)
   .settings(nocomma {
     mimaPreviousArtifacts := Set.empty
-    Compile / packageBin := (launchSub / Proguard / proguard).value.head
-    Compile / packageSrc := (launchSub / Compile / packageSrc).value
-    Compile / packageDoc := (launchSub / Compile / packageDoc).value
-    commands += Command.command("release") { state =>
-      "clean" ::
-        "test" ::
-        "publishSigned" ::
-        state
-    }
+    Compile / packageBin := Def.taskDyn {
+      val p = launcherSubProject.value
+      Def.task {
+        (p / Proguard / proguard).value.head
+      }
+    }.value
+    Compile / packageSrc := Def.taskDyn {
+      val p = launcherSubProject.value
+      Def.task {
+        (p / Compile / packageSrc).value
+      }
+    }.value
+    Compile / packageDoc := Def.taskDyn {
+      val p = launcherSubProject.value
+      Def.task {
+        (p / Compile / packageDoc).value
+      }
+    }.value
     validNamespaces ++= Set("xsbt", "xsbti", "scala", "org.apache.ivy", "org.fusesource.jansi")
     validEntries ++= Set("LICENSE", "NOTICE", "module.properties")
     shadingRules ++= {
@@ -105,7 +167,22 @@ lazy val launchInterfaceSub = (project in file("launcher-interface"))
 
 // the launcher.  Retrieves, loads, and runs applications based on a configuration file.
 // TODO - move into a directory called "launcher-impl or something."
-lazy val launchSub = (project in file("launcher-implementation"))
+lazy val launchSub = (projectMatrix in file("launcher-implementation"))
+  .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(scala3))
+  .jvmPlatform(
+    scalaVersions = scalaVersions,
+    axisValues = Seq(jdk8),
+    settings = Def.settings(
+      jdk8settings,
+    ),
+  )
+  .jvmPlatform(
+    scalaVersions = scalaVersions,
+    axisValues = Seq(jdk11),
+    settings = Def.settings(
+      jdk11settings,
+    ),
+  )
   .enablePlugins(SbtProguard)
   .dependsOn(launchInterfaceSub)
   .settings(Util.base)
@@ -123,7 +200,7 @@ lazy val launchSub = (project in file("launcher-implementation"))
     )
     testFrameworks += new TestFramework("verify.runner.Framework")
     Test / compile := {
-      val ignore = (testSamples / publishLocal).value
+      val ignore = testSamples.jvm.get.map(_ / publishLocal).join.value
       val ignore2 = (launchInterfaceSub / publishLocal).value
       (Test / compile).value
     }
@@ -187,7 +264,22 @@ def ivyFilter = {
 }
 
 // used to test the retrieving and loading of an application: sample app is packaged and published to the local repository
-lazy val testSamples = (project in file("test-sample"))
+lazy val testSamples = (projectMatrix in file("test-sample"))
+  .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(scala3))
+  .jvmPlatform(
+    scalaVersions = scalaVersions,
+    axisValues = Seq(jdk8),
+    settings = Def.settings(
+      jdk8settings,
+    ),
+  )
+  .jvmPlatform(
+    scalaVersions = scalaVersions,
+    axisValues = Seq(jdk11),
+    settings = Def.settings(
+      jdk11settings,
+    ),
+  )
   .dependsOn(launchInterfaceSub)
   .settings(Release.javaVersionCheckSettings)
   .settings(Util.baseScalacOptions)

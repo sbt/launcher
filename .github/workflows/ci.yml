@@ -10,7 +10,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            java: 8
+            java: 11
             distribution: zulu
     runs-on: ${{ matrix.os }}
     env:

@@ -8,5 +8,6 @@ addSbtPlugin("com.eed3si9n" % "sbt-nocomma" % "0.1.3")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.2")
 addSbtPlugin("io.get-coursier" % "sbt-shading" % "2.1.8")
 addSbtPlugin("com.github.sbt" % "sbt-header" % "5.11.0")
+addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.11.0")
 
 scalacOptions += "-feature"
