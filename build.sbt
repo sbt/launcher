@@ -222,7 +222,7 @@ lazy val launchSub = (projectMatrix in file("launcher-implementation"))
       jdk11settings,
     ),
   )
-  .enablePlugins(SbtProguard)
+  .enablePlugins(SbtProguard, BuildInfoPlugin)
   .dependsOn(launchInterfaceSub)
   .settings(Util.base)
   .settings(launchSettings)
@@ -237,6 +237,11 @@ lazy val launchSub = (projectMatrix in file("launcher-implementation"))
       scalacheck % Test,
       junit % Test,
     )
+    buildInfoKeys := Seq[BuildInfoKey](
+      version,
+      "coursierVersion" -> Deps.coursierVersion,
+    )
+    buildInfoPackage := "xsbt.boot"
     testFrameworks += new TestFramework("verify.runner.Framework")
     Test / compile := {
       val ignore = testSamples.jvm.get.map(_ / publishLocal).join.value
