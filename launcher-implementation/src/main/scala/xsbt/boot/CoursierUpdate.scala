@@ -55,10 +55,20 @@ class CousierUpdate(config: UpdateConfiguration):
       case _         =>
         if isWindows then windowsCacheDirectory
         else CacheDefaults.location
+
+  /** HTTP User-Agent, overridable with -Dsbt.http.agent (same property as sbt). */
+  private def userAgent: String =
+    sys.props.get("sbt.http.agent").getOrElse {
+      s"Coursier/${BuildInfo.coursierVersion} (+https://github.com/coursier) " +
+        s"sbt-launcher/${BuildInfo.version} (+https://www.scala-sbt.org/)"
+    }
+
   private lazy val coursierCache =
     import coursier.util.Task
     val credentials = bootCredentials
-    val cache = credentials.foldLeft(FileCache(defaultCacheLocation)(using Task.sync)) {
+    val cache = credentials.foldLeft(
+      FileCache(defaultCacheLocation)(using Task.sync).withUserAgent(userAgent)
+    ) {
       _.addCredentials(_)
     }
     cache
