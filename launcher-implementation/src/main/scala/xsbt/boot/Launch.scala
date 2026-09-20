@@ -25,7 +25,7 @@ object Launch:
 
   def apply(currentDirectory: File, arguments: LauncherArguments): Option[Int] =
     if arguments.isExportRt then
-      if arguments.args.size != 1 then sys.error("destination expected: --export-rt <dest>")
+      if arguments.args.sizeIs != 1 then sys.error("destination expected: --export-rt <dest>")
       exportRt(arguments.args.head)
     else
       val (configLocation, newArgs2, state) = Configuration.find(arguments.args, currentDirectory)

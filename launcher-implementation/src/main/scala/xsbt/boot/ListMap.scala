@@ -21,7 +21,7 @@ sealed class ListMap[K, V] private (backing: List[(K, V)])
   def keys: List[K] = backing.reverse.map(_._1)
   def apply(k: K): V = getOrError(get(k), "Key " + k + " not found")
   def contains(k: K): Boolean = get(k).isDefined
-  def iterator = backing.reverse.iterator
+  def iterator = backing.reverseIterator
   override def isEmpty: Boolean = backing.isEmpty
   override def toList = backing.reverse
   override def toSeq: Seq[(K, V)] = toList
