@@ -8,7 +8,7 @@ object Deps {
   lazy val junit = "junit" % "junit" % "4.13.2"
   lazy val verify = "com.eed3si9n.verify" %% "verify" % "1.0.0"
 
-  val coursierVersion = "2.1.23"
+  val coursierVersion = "2.1.25"
   lazy val coursier = ("io.get-coursier" %% "coursier" % coursierVersion)
     .cross(CrossVersion.for3Use2_13)
     .exclude("org.codehaus.plexus", "plexus-archiver")

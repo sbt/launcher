@@ -9,10 +9,11 @@ import Pre.*
 import coursier.*
 import coursier.cache.{ CacheDefaults, FileCache }
 import coursier.core.{ Publication, Repository }
-import coursier.credentials.DirectCredentials
+import coursier.credentials.{ DirectCredentials, Password }
 import coursier.ivy.IvyRepository
 import coursier.maven.MavenRepository
 import coursier.params.ResolutionParams
+import coursier.version.VersionConstraint
 import java.io.{ File, FileWriter, PrintWriter }
 import java.nio.file.{ Files, StandardCopyOption }
 import java.util.Properties
@@ -84,14 +85,14 @@ class CousierUpdate(config: UpdateConfiguration):
             withPublication(
               Dependency(
                 Module(Organization(scalaOrg), ModuleName(CompilerModuleName)),
-                scalaVersion
+                VersionConstraint(scalaVersion)
               ),
               u.classifiers
             ) :::
               withPublication(
                 Dependency(
                   Module(Organization(scalaOrg), ModuleName(LibraryModuleName)),
-                  scalaVersion
+                  VersionConstraint(scalaVersion)
                 ),
                 u.classifiers
               )
@@ -99,14 +100,14 @@ class CousierUpdate(config: UpdateConfiguration):
             withPublication(
               Dependency(
                 Module(Organization(scalaOrg), ModuleName(Compiler3ModuleName)),
-                scalaVersion
+                VersionConstraint(scalaVersion)
               ),
               u.classifiers
             ) :::
               withPublication(
                 Dependency(
                   Module(Organization(scalaOrg), ModuleName(Library3ModuleName)),
-                  scalaVersion
+                  VersionConstraint(scalaVersion)
                 ),
                 u.classifiers
               )
@@ -125,7 +126,7 @@ class CousierUpdate(config: UpdateConfiguration):
         withPublication(
           Dependency(
             Module(Organization(app.groupID), ModuleName(resolvedName)),
-            app.getVersion
+            VersionConstraint(app.getVersion)
           ),
           u.classifiers
         ) :::
@@ -134,7 +135,7 @@ class CousierUpdate(config: UpdateConfiguration):
               withPublication(
                 Dependency(
                   Module(Organization(scalaOrg), ModuleName(Library3ModuleName)),
-                  sv
+                  VersionConstraint(sv)
                 ),
                 u.classifiers
               )
@@ -142,7 +143,7 @@ class CousierUpdate(config: UpdateConfiguration):
               withPublication(
                 Dependency(
                   Module(Organization(scalaOrg), ModuleName(LibraryModuleName)),
-                  sv
+                  VersionConstraint(sv)
                 ),
                 u.classifiers
               )
@@ -154,13 +155,13 @@ class CousierUpdate(config: UpdateConfiguration):
       dependencySet.collectFirst {
         case d: Dependency
             if d.module == Module(Organization(scalaOrg), ModuleName(Library3ModuleName)) =>
-          d.version
+          d.versionConstraint.asString
       }
     def detectScalaVersion2: Option[String] =
       dependencySet.collectFirst {
         case d: Dependency
             if d.module == Module(Organization(scalaOrg), ModuleName(LibraryModuleName)) =>
-          d.version
+          d.versionConstraint.asString
       }
     detectScalaVersion3.orElse(detectScalaVersion2)
 
@@ -184,10 +185,8 @@ class CousierUpdate(config: UpdateConfiguration):
           case _ =>
             ResolutionParams()
     val r: Resolution = Resolve()
-      .withCache(coursierCache)
+      .copy(cache = coursierCache, repositories = repos, resolutionParams = params)
       .addDependencies(deps*)
-      .withRepositories(repos)
-      .withResolutionParams(params)
       .run()
     val actualScalaVersion = detectScalaVersion(r.dependencySet.set)
     val retrieveDir = target match
@@ -255,7 +254,8 @@ class CousierUpdate(config: UpdateConfiguration):
 
   def withPublication(d: Dependency, classifiers: List[String]): List[Dependency] =
     if classifiers.isEmpty then List(d)
-    else classifiers.map(c => d.withPublication(Publication.empty.withClassifier(Classifier(c))))
+    else
+      classifiers.map(c => d.copy(publication = Publication.empty.copy(classifier = Classifier(c))))
 
   def bootCredentials =
     val optionProps =
@@ -270,13 +270,14 @@ class CousierUpdate(config: UpdateConfiguration):
         keys.productIterator.map(key => props.getProperty(key.toString)).toList
       if host != null && user != null && password != null then
         Some(
-          DirectCredentials()
-            .withHost(host)
-            .withUsername(user)
-            .withPassword(password)
-            .withRealm(Option(realm).filter(_.nonEmpty))
-            .withHttpsOnly(false)
-            .withMatchHost(true)
+          DirectCredentials().copy(
+            host = host,
+            usernameOpt = Some(user),
+            passwordOpt = Some(Password(password)),
+            realm = Option(realm).filter(_.nonEmpty),
+            httpsOnly = false,
+            matchHost = true
+          )
         )
       else None
     (optionProps match
