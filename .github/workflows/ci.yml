@@ -13,6 +13,7 @@ jobs:
             java: 11
             distribution: zulu
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     env:
       # define Java options for both official sbt and sbt-extras
       JAVA_OPTS: -Xms2048M -Xmx2048M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
