@@ -92,6 +92,7 @@ class StreamDumper(in: java.io.BufferedReader, out: java.io.PrintStream) extends
   setDaemon(true)
   val endTime = new java.util.concurrent.atomic.AtomicLong(Long.MaxValue)
   override def run(): Unit =
+    @tailrec
     def read(): Unit = if endTime.get > System.currentTimeMillis then
       in.readLine match
         case null => ()

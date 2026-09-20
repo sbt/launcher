@@ -6,6 +6,7 @@
 package xsbt.boot
 
 import BootConfiguration.{ FjbgPackage, IvyPackage, SbtBootPackage, ScalaPackage }
+import scala.annotation.tailrec
 import scala.collection.immutable.LazyList
 
 /**
@@ -30,6 +31,7 @@ private[boot] final class BootFilteredLoader(parent: ClassLoader) extends ClassL
 
 object Loaders:
   def apply(loader: ClassLoader): LazyList[ClassLoader] =
+    @tailrec
     def loaders(loader: ClassLoader, accum: LazyList[ClassLoader]): LazyList[ClassLoader] =
       if loader eq null then accum else loaders(loader.getParent, loader #:: accum)
     loaders(loader, LazyList.empty)

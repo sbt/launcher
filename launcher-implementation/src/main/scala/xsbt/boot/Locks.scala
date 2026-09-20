@@ -76,6 +76,7 @@ object Locks extends xsbti.GlobalLock:
       i.getMessage == "Resource deadlock avoided"
 
     private def withFileLock[T](run: Callable[T]): T =
+      @tailrec
       def withChannelRetries(retries: Int)(channel: FileChannel): T =
         try withChannel(channel)
         catch

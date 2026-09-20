@@ -8,6 +8,7 @@ package xsbt.boot
 import Pre.*
 import java.io.File
 import java.net.URI
+import scala.annotation.tailrec
 import scala.collection.immutable.List
 
 object Find:
@@ -43,6 +44,7 @@ class Find(config: LaunchConfiguration):
     (ResolvePaths(config, baseDirectory), baseDirectory)
   private def hasProject(f: File) =
     f.isDirectory && search.paths.forall(p => ResolvePaths(f, p).exists)
+  @tailrec
   private def path(f: File, acc: List[File]): List[File] =
     if f eq null then acc else path(f.getParentFile, f :: acc)
 object ResolvePaths:

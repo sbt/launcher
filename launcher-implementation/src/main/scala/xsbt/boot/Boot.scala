@@ -6,6 +6,7 @@
 package xsbt.boot
 
 import java.nio.file.{ Path, Paths }
+import scala.annotation.tailrec
 
 // The entry point to the launcher
 object Boot:
@@ -72,6 +73,7 @@ object Boot:
 
   // this arrangement is because Scala does not always properly optimize away
   // the tail recursion in a catch statement
+  @tailrec
   final def run(args: LauncherArguments): Unit = runImpl(args) match
     case Some(newArgs) => run(newArgs)
     case None          => ()
