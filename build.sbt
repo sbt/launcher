@@ -10,7 +10,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / version := {
   val orig = (ThisBuild / version).value
-  if (orig.endsWith("-SNAPSHOT")) "1.4.0-SNAPSHOT"
+  if (orig.endsWith("-SNAPSHOT")) "1.7.0-SNAPSHOT"
   else orig
 }
 ThisBuild / description := "Standalone launcher for maven/ivy deployed projects"
@@ -122,6 +122,7 @@ lazy val launcherShaded_jdk11 = launcherShaded
 // the launcher is a multi-release JAR: the jdk8 build at the root, and the jdk11 build
 // under META-INF/versions/11
 lazy val launcher = (project in file("launcher"))
+  .settings(Release.settings)
   .settings(nocomma {
     name := "launcher"
     autoScalaLibrary := false

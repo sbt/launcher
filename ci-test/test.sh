@@ -1,10 +1,8 @@
 #!/bin/bash -ex
 
 declare -a LAUNCHERS=(
-"../../launcher-implementation/target/jdk8-jvm-3/proguard/launcher-implementation-jdk8-1.4.0-SNAPSHOT-shading.jar"
-"../../launcher-implementation/target/jdk11-jvm-3/proguard/launcher-implementation-1.4.0-SNAPSHOT-shading.jar"
+"../../launcher/target/launcher-1.7.0-SNAPSHOT.jar"
 )
-
 for LAUNCHER in "${LAUNCHERS[@]}"
 do
   pushd ci-test/app0
