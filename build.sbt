@@ -34,25 +34,28 @@ val launcherSubProject = settingKey[Project]("")
 
 val jdk8settings = Def.settings(
   scalacOptions += "-release:8",
+  javacOptions ++= Seq("--release", "8"),
   name := s"${name.value}-jdk8"
 )
 val jdk11settings = Def.settings(
   scalacOptions ++= Seq(
     "-Yfuture-lazy-vals",
     "-release:11",
-  )
+  ),
+  javacOptions ++= Seq("--release", "11"),
 )
 
 commands += Command.command("release") { state =>
   "clean" ::
-    "test" ::
-    launcher.allProjects.map(p => s"${p._1.id}/publishSigned").toList :::
+    "publishSigned" ::
     state
 }
 
 mimaFailOnNoPrevious := false
+LocalRootProject / publish / skip := true
+LocalRootProject / name := "root"
 
-lazy val launcher = (projectMatrix in file("."))
+lazy val launcherShaded = (projectMatrix in file("launcher-shaded"))
   .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(scala3))
   .jvmPlatform(
     scalaVersions = scalaVersions,
@@ -79,23 +82,12 @@ lazy val launcher = (projectMatrix in file("."))
   .enablePlugins(ShadingPlugin)
   .settings(javaOnly ++ Util.commonSettings("launcher") ++ Release.settings)
   .settings(nocomma {
+    publish / skip := true
     mimaPreviousArtifacts := Set.empty
     Compile / packageBin := Def.taskDyn {
       val p = launcherSubProject.value
       Def.task {
         (p / Proguard / proguard).value.head
-      }
-    }.value
-    Compile / packageSrc := Def.taskDyn {
-      val p = launcherSubProject.value
-      Def.task {
-        (p / Compile / packageSrc).value
-      }
-    }.value
-    Compile / packageDoc := Def.taskDyn {
-      val p = launcherSubProject.value
-      Def.task {
-        (p / Compile / packageDoc).value
       }
     }.value
     validNamespaces ++= Set("xsbt", "xsbti", "scala", "org.apache.ivy", "org.fusesource.jansi")
@@ -122,6 +114,51 @@ lazy val launcher = (projectMatrix in file("."))
     headerLicense := (ThisBuild / headerLicense).value
   })
 
+lazy val launcherShaded_jdk8 = launcherShaded
+  .finder(jdk8, VirtualAxis.jvm)(scala3)
+lazy val launcherShaded_jdk11 = launcherShaded
+  .finder(jdk11, VirtualAxis.jvm)(scala3)
+
+// the launcher is a multi-release JAR: the jdk8 build at the root, and the jdk11 build
+// under META-INF/versions/11
+lazy val launcher = (project in file("launcher"))
+  .settings(nocomma {
+    name := "launcher"
+    autoScalaLibrary := false
+    launcherSubProject := {
+      val Seq(p) = launchSub.finder(jdk8).get
+      p
+    }
+    mimaPreviousArtifacts := Set.empty
+    Compile / packageBin := {
+      val jdk8Jar = (launcherShaded_jdk8 / shadedPackageBin).value
+      val jdk11Jar = (launcherShaded_jdk11 / shadedPackageBin).value
+      val out = (Compile / packageBin / artifactPath).value
+      val cached = FileFunction.cached(
+        streams.value.cacheDirectory / "multi-release",
+        FilesInfo.hash,
+        FilesInfo.exists
+      ) { _ =>
+        MultiReleaseJar.create(jdk8Jar, Seq(11 -> jdk11Jar), out)
+        Set(out)
+      }
+      cached(Set(jdk8Jar, jdk11Jar))
+      out
+    }
+    Compile / packageSrc := Def.taskDyn {
+      val p = launcherSubProject.value
+      Def.task {
+        (p / Compile / packageSrc).value
+      }
+    }.value
+    Compile / packageDoc := Def.taskDyn {
+      val p = launcherSubProject.value
+      Def.task {
+        (p / Compile / packageDoc).value
+      }
+    }.value
+  })
+
 // the launcher is published with metadata so that the scripted plugin can pull it in
 // being proguarded, it shouldn't ever be on a classpath with other jars, however
 def proguardedLauncherSettings = Seq(
@@ -146,6 +183,8 @@ lazy val launchInterfaceSub = (project in file("launcher-interface"))
   .settings(javaOnly)
   .settings(nocomma {
     name := "Launcher Interface"
+    // shared by the jdk8 and jdk11 launchers
+    javacOptions ++= Seq("--release", "8")
     Compile / resourceGenerators += Def.task {
       generateVersionFile("sbt.launcher.version.properties")(
         version.value,
