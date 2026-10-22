@@ -44,7 +44,7 @@ class CousierUpdate(config: UpdateConfiguration):
         sys.env
           .get("LOCALAPPDATA")
           .map(absoluteFile)
-          .getOrElse(new File(new File(absoluteFile(sys.props("user.home")), "AppData"), "Local"))
+          .getOrElse(new File(new File(Pre.userHome.getAbsoluteFile, "AppData"), "Local"))
       new File(new File(new File(base, "Coursier"), "Cache"), "v1")
     sys.props
       .get("sbt.coursier.home")
@@ -322,7 +322,7 @@ class CousierUpdate(config: UpdateConfiguration):
           case Local =>
             localRepository :: Nil
           case MavenLocal =>
-            val localDir = new File(new File(new File(sys.props("user.home")), ".m2"), "repository")
+            val localDir = new File(new File(Pre.userHome, ".m2"), "repository")
             mavenRepository(localDir.toPath.toUri.toString) :: Nil
           case MavenCentral =>
             Repositories.central :: Nil
@@ -361,7 +361,7 @@ class CousierUpdate(config: UpdateConfiguration):
       .get
 
   private def localRepository: IvyRepository =
-    val localDir = new File(new File(new File(sys.props("user.home")), ".ivy2"), "local")
+    val localDir = new File(new File(Pre.userHome, ".ivy2"), "local")
     val root0 = localDir.toPath.toUri.toASCIIString
     val root = if root0.endsWith("/") then root0 else root0 + "/"
     IvyRepository

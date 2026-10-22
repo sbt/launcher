@@ -38,8 +38,28 @@ object PreTest extends Properties("Pre"):
   property("array") = Prop.forAll(genFiles) { (a: Array[File]) =>
     array(a.toList*) sameElements Array(a*)
   }
+  property("userHomeFrom prefers a valid user.home") =
+    Prop.forAll(genHome, Gen.option(genHome), genHome) { (prop, env, tmp) =>
+      userHomeFrom(Some(prop), env, tmp) == prop
+    }
+  property("userHomeFrom falls back to HOME when user.home is invalid") =
+    Prop.forAll(genInvalidHome, genHome, genHome) { (prop, env, tmp) =>
+      userHomeFrom(prop, Some(env), tmp) == env
+    }
+  property("userHomeFrom falls back to tmpdir when both are invalid") =
+    Prop.forAll(genInvalidHome, genInvalidHome, genHome) { (prop, env, tmp) =>
+      userHomeFrom(prop, env, tmp) == tmp
+    }
+  property("fixUserHome replaces ?") =
+    val original = System.getProperty("user.home")
+    try
+      System.setProperty("user.home", "?")
+      fixUserHome()
+      val fixed = System.getProperty("user.home")
+      isValidHome(fixed) && fixed == userHome.toString
+    finally System.setProperty("user.home", original)
   property("substituteTilde") =
-    val userHome = System.getProperty("user.home")
+    val userHome = Pre.userHome.toString
     assert(substituteTilde("~/path") == s"$userHome/path")
     assert(substituteTilde("~\\") == s"$userHome\\")
     assert(substituteTilde("~") == userHome)
@@ -51,6 +71,9 @@ object PreTest extends Properties("Pre"):
     for (i <- Arbitrary.arbitrary[Int]) yield new File(i.toString)
   }
   val genFiles: Gen[Array[File]] = Arbitrary.arbitrary[Array[File]]
+  val genHome: Gen[String] = Gen.identifier.map("/" + _)
+  val genInvalidHome: Gen[Option[String]] =
+    Gen.oneOf(None, Some(""), Some("?"), Some("  "), Some(" ? "))
 
   def trap[T](t: => T): Option[T] =
     try Some(t)
