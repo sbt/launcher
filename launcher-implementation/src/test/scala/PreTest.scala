@@ -58,6 +58,57 @@ object PreTest extends Properties("Pre"):
       val fixed = System.getProperty("user.home")
       isValidHome(fixed) && fixed == userHome.toString
     finally System.setProperty("user.home", original)
+  property("localCacheBaseFrom prefers sbt.global.localcache") =
+    Prop.forAll(genHome, genHome, Arbitrary.arbitrary[Boolean], Arbitrary.arbitrary[Boolean]) {
+      (cache, other, windows, mac) =>
+        val props = Map("sbt.global.localcache" -> cache, "sbt.global.base" -> other)
+        val env = Map("SBT_LOCAL_CACHE" -> other, "LOCALAPPDATA" -> other)
+        localCacheBaseFrom(props.get, env.get, windows, mac, new File(other)) ==
+          new File(cache).getAbsoluteFile
+    }
+  property("localCacheBaseFrom ignores sbt.global.base") = Prop.forAll(genHome, genHome) {
+    (base, cache) =>
+      val props = Map("sbt.global.base" -> base)
+      val env = Map("SBT_LOCAL_CACHE" -> cache)
+      localCacheBaseFrom(props.get, env.get, false, false, new File(base)) ==
+        new File(cache).getAbsoluteFile
+  }
+  property("localCacheBaseFrom uses SBT_LOCAL_CACHE") = Prop.forAll(genHome, genHome) {
+    (cache, other) =>
+      val env = Map("SBT_LOCAL_CACHE" -> cache, "LOCALAPPDATA" -> other)
+      localCacheBaseFrom(Map.empty.get, env.get, true, true, new File(other)) ==
+        new File(cache).getAbsoluteFile
+  }
+  property("localCacheBaseFrom uses LOCALAPPDATA only on Windows") = Prop.forAll(genHome, genHome) {
+    (app, home) =>
+      val env = Map("LOCALAPPDATA" -> app)
+      localCacheBaseFrom(Map.empty.get, env.get, true, false, new File(home)) ==
+        new File(app, "sbt").getAbsoluteFile &&
+        localCacheBaseFrom(Map.empty.get, env.get, false, false, new File(home)) ==
+        new File(home, ".cache/sbt").getAbsoluteFile
+  }
+  property("localCacheBaseFrom prefers XDG_CACHE_HOME over LOCALAPPDATA") =
+    Prop.forAll(genHome, genHome, genHome) { (xdg, app, home) =>
+      val env = Map("XDG_CACHE_HOME" -> xdg, "LOCALAPPDATA" -> app)
+      localCacheBaseFrom(Map.empty.get, env.get, true, false, new File(home)) ==
+        new File(xdg, "sbt").getAbsoluteFile
+    }
+  property("localCacheBaseFrom uses Library/Caches on macOS") = Prop.forAll(genHome) { home =>
+    localCacheBaseFrom(Map.empty.get, Map.empty.get, false, true, new File(home)) ==
+      new File(home, "Library/Caches/sbt").getAbsoluteFile
+  }
+  property("localCacheBaseFrom prefers XDG_CACHE_HOME over macOS default") =
+    Prop.forAll(genHome, genHome) { (xdg, home) =>
+      val env = Map("XDG_CACHE_HOME" -> xdg)
+      localCacheBaseFrom(Map.empty.get, env.get, false, true, new File(home)) ==
+        new File(xdg, "sbt").getAbsoluteFile
+    }
+  property("localCacheBaseFrom uses XDG_CACHE_HOME") = Prop.forAll(genHome, genHome) {
+    (xdg, home) =>
+      val env = Map("XDG_CACHE_HOME" -> xdg)
+      localCacheBaseFrom(Map.empty.get, env.get, false, false, new File(home)) ==
+        new File(xdg, "sbt").getAbsoluteFile
+  }
   property("substituteTilde") =
     val userHome = Pre.userHome.toString
     assert(substituteTilde("~/path") == s"$userHome/path")
