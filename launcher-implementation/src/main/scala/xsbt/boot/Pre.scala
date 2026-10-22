@@ -91,7 +91,37 @@ object Pre:
   final val isCygwin: Boolean = isWindows && java.lang.Boolean.getBoolean("sbt.cygwin")
 
   private[boot] def substituteTilde(path: String): String =
-    path.replaceFirst("^~(/|\\\\|$)", System.getProperty("user.home") + "$1")
+    path.replaceFirst(
+      "^~(/|\\\\|$)",
+      java.util.regex.Matcher.quoteReplacement(userHome.toString) + "$1"
+    )
+
+  /**
+   * User home directory. JDK reports `user.home` as `?` when the current user has no passwd
+   * entry (common in Docker; see JDK-8280357), so fall back to the `HOME` environment variable,
+   * then `java.io.tmpdir`.
+   */
+  def userHome: File =
+    new File(
+      userHomeFrom(sys.props.get("user.home"), sys.env.get("HOME"), sys.props("java.io.tmpdir"))
+    )
+
+  private[boot] def isValidHome(s: String): Boolean = s.trim.nonEmpty && s.trim != "?"
+
+  private[boot] def userHomeFrom(
+      userHomeProp: Option[String],
+      homeEnv: Option[String],
+      tmpDir: String
+  ): String =
+    userHomeProp.filter(isValidHome).orElse(homeEnv.filter(isValidHome)).getOrElse(tmpDir)
+
+  /**
+   * Sets the `user.home` system property to [[userHome]] when it is invalid, so that
+   * boot properties and libraries such as Coursier and JNA see the same directory.
+   */
+  def fixUserHome(): Unit =
+    if !sys.props.get("user.home").exists(isValidHome) then
+      System.setProperty("user.home", userHome.toString)
 
   import java.util.Properties
   import java.io.{ FileInputStream, FileOutputStream }

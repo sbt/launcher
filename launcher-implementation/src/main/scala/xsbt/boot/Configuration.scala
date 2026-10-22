@@ -127,7 +127,7 @@ object Configuration:
 
   def resolveAgainst(baseDirectory: File): List[URI] =
     directoryURI(baseDirectory) ::
-      directoryURI(new File(System.getProperty("user.home"))) ::
+      directoryURI(Pre.userHome) ::
       toDirectory(classLocation(getClass).toURI) ::
       Nil
 
