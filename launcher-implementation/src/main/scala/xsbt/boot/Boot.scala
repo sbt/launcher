@@ -5,7 +5,7 @@
 
 package xsbt.boot
 
-import java.nio.file.{ Path, Paths }
+import java.nio.file.Path
 import scala.annotation.tailrec
 
 // The entry point to the launcher
@@ -63,7 +63,7 @@ object Boot:
            * The launch script greps for output starting with "java9-rt-ext-" so changing this
            * string will require changing the grep command in sbt-launch-lib.bash.
            */
-          val rtExtDir = Paths.get(globalBase, "java9-rt-ext-" + v)
+          val rtExtDir = Pre.localCacheBase.toPath.resolve("rt").resolve("java9-rt-ext-" + v)
           Console.out.println(rtExtDir.toString)
           exit(0)
         case "--locate" :: rest    => parse(rest, true, isExportRt, remaining)

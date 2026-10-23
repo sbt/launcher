@@ -88,6 +88,8 @@ object Pre:
     ()
   final val isWindows: Boolean =
     System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")
+  final val isMac: Boolean =
+    System.getProperty("os.name").toLowerCase(Locale.ENGLISH).startsWith("mac")
   final val isCygwin: Boolean = isWindows && java.lang.Boolean.getBoolean("sbt.cygwin")
 
   private[boot] def substituteTilde(path: String): String =
@@ -122,6 +124,36 @@ object Pre:
   def fixUserHome(): Unit =
     if !sys.props.get("user.home").exists(isValidHome) then
       System.setProperty("user.home", userHome.toString)
+
+  /**
+   * Operating system specific cache directory, similar to the Coursier cache.
+   * Mirrors the base directory of `SysProp.globalLocalCache` in sbt.
+   */
+  def localCacheBase: File =
+    localCacheBaseFrom(sys.props.get, sys.env.get, isWindows, isMac, userHome)
+
+  private[boot] def localCacheBaseFrom(
+      prop: String => Option[String],
+      env: String => Option[String],
+      windows: Boolean,
+      mac: Boolean,
+      home: File
+  ): File =
+    val appName = "sbt"
+    def nonEmpty(f: String => Option[String])(key: String): Option[String] =
+      f(key).filter(_.trim.nonEmpty)
+    val p = nonEmpty(prop)
+    val e = nonEmpty(env)
+    p("sbt.global.localcache")
+      .map(new File(_))
+      .orElse(e("SBT_LOCAL_CACHE").map(new File(_)))
+      .orElse(e("XDG_CACHE_HOME").map(new File(_, appName)))
+      .orElse(e("LOCALAPPDATA").filter(_ => windows).map(new File(_, appName)))
+      .getOrElse(
+        if mac then new File(new File(new File(home, "Library"), "Caches"), appName)
+        else new File(new File(home, ".cache"), appName)
+      )
+      .getAbsoluteFile
 
   import java.util.Properties
   import java.io.{ FileInputStream, FileOutputStream }
