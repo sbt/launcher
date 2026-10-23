@@ -253,6 +253,7 @@ lazy val launchSub = (projectMatrix in file("launcher-implementation"))
       "-keep,allowshrinking class * { *; }", // no obfuscation
       "-keepattributes SourceFile,LineNumberTable,Signature,InnerClasses,EnclosingMethod", // preserve debugging information
       "-dontobfuscate",
+      "-keepclassmembers class * { *** *$lzy*; }",
       "-dontnote",
       "-dontwarn org.apache.ivy.**",
       "-dontwarn scala.runtime.Statics",
