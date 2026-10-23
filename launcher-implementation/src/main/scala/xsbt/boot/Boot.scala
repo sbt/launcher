@@ -5,14 +5,10 @@
 
 package xsbt.boot
 
-import java.nio.file.Path
 import scala.annotation.tailrec
 
 // The entry point to the launcher
 object Boot:
-  lazy val defaultGlobalBase: Path = Pre.userHome.toPath.resolve(".sbt").resolve("1.0")
-  lazy val globalBase = sys.props.get("sbt.global.base").getOrElse(defaultGlobalBase.toString)
-
   def main(args: Array[String]): Unit =
     try
       Pre.fixUserHome()
